@@ -1,4 +1,4 @@
-package Graph::Dependency::Run;
+package Graph::Dependency::OP::Run;
 use Any::Moose;
 use List::MoreUtils 'any';
 
@@ -60,3 +60,34 @@ sub _build_file_comperator {
 }
 
 1;
+
+__END__
+
+=method id()
+
+Returns an identifier for the current run.
+
+=method get_stash($key)
+
+Get an element from the stash.
+
+=method set_stash($key, $value)
+
+Set an element from the stash.
+
+=attr verbosity
+
+The verbosity, defaults to C<0>.
+
+=attr logger
+
+A logging subroutine, defaults to a sub printing to STDERR.
+
+=method log($message, $severity)
+
+Log a certain message with a certain severity.
+
+=attr file_comperator
+
+Set a file comparator function. It is called with the destination files as its dependencies as other arguments.
+

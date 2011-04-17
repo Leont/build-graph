@@ -1,8 +1,8 @@
-package Graph::Dependency::Node;
+package Graph::Dependency::OP::Node;
 use Any::Moose 'Role';
 
 has dependencies => (
-	isa => 'ArrayRef[Graph::Dependency::Node]',
+	isa => 'ArrayRef[Graph::Dependency::OP::Node]',
 	default => sub { [] },
 	handles => {
 		dependencies => 'elements',
@@ -11,7 +11,7 @@ has dependencies => (
 
 has action => (
 	is => 'ro',
-	isa => 'Graph::Dependency::Action',
+	isa => 'Graph::Dependency::OP::Action',
 	required => 1,
 );
 
@@ -42,3 +42,15 @@ sub update_self {
 }
 
 1;
+
+=method dependencies
+
+=attr action
+
+=attr arguments
+
+=attr verbose_message
+
+=method outdated
+
+=method update_self

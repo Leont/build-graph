@@ -1,7 +1,7 @@
-package Graph::Dependency::Node::Phony;
+package Graph::Dependency::OP::Node::Phony;
 use Any::Moose;
 
-with 'Graph::Dependency::Node';
+with 'Graph::Dependency::OP::Node';
 
 has _ran => (
 	is => 'ro',
@@ -16,3 +16,10 @@ sub outdated {
 }
 
 1;
+
+__END__
+
+=method outdated($run)
+
+Returns true the first it is called, and false from then on.
+
