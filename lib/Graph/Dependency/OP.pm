@@ -1,10 +1,14 @@
 package Graph::Dependency::OP;
 use Any::Moose;
+use Any::Moose '::Util::TypeConstraints';
 use Carp ();
+use Graph::Dependency::OP::Run;
+
+subtype 'Graph::Dependency::Op::Node' => as role_type('Graph::Dependency::OP::Node');
 
 has nodes => (
-	is => 'ro',
 	isa => 'HashRef[Graph::Dependency::OP::Node]',
+	traits => ['Hash'],
 	required => 1,
 	handles => {
 		get_node => 'get',
@@ -30,8 +34,14 @@ sub run {
 
 __END__
 
-=attr nodes
+=method get_node($key)
+
+Get the node named C<$key>.
 
 =attr runner
 
-=method run
+A classname that is used to run the OP-tree. Defaults to C<Graph::Dependency::OP::Run>.
+
+=method run($start, %args)
+
+Run the current optree, optionally with extra arguments.

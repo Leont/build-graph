@@ -1,8 +1,17 @@
 package Graph::Dependency::OP::Node;
 use Any::Moose 'Role';
 
+use Graph::Dependency::OP::Action::Sub;
+
+has name => (
+	is => 'ro',
+	isa => 'Str',
+	required => 1,
+);
+
 has dependencies => (
 	isa => 'ArrayRef[Graph::Dependency::OP::Node]',
+	traits => ['Array'],
 	default => sub { [] },
 	handles => {
 		dependencies => 'elements',
@@ -12,18 +21,13 @@ has dependencies => (
 has action => (
 	is => 'ro',
 	isa => 'Graph::Dependency::OP::Action',
+	coerce => 1,
 	required => 1,
 );
 
-has arguments => (
+has message => (
 	is => 'ro',
-	isa => 'HashRef',
-	default => sub { {} },
-);
-
-has verbose_message => (
-	is => 'ro',
-	isa => 'Str',
+	isa => 'Str|Undef',
 	required => 1,
 );
 
@@ -35,22 +39,36 @@ sub update_self {
 		$dep->update_self($runstate);
 	}
 	if ($self->outdated($runstate)) {
-		$runstate->log($self->verbose_message, 1);
-		$self->action->execute($self->arguments, $runstate);
+		$runstate->log($self->message, 0) if defined $self->message;
+		$self->action->execute($runstate);
 	}
 	return;
 }
 
 1;
 
+__END__
+
+=attr name
+
+Name of the node
+
 =method dependencies
+
+The list of Node objects that are dependencies of this node.
 
 =attr action
 
-=attr arguments
+The name of the action that may be triggered by this node.
 
-=attr verbose_message
+=attr message
+
+The message that this action may output or log when the action is being run.
 
 =method outdated
 
+Returns true if the node is not up-to-date.
+
 =method update_self
+
+Update the node.

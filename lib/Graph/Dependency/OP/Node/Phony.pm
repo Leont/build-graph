@@ -5,6 +5,7 @@ with 'Graph::Dependency::OP::Node';
 
 has _ran => (
 	is => 'ro',
+	traits => ['Hash'],
 	isa => 'HashRef[Int]',
 	init_arg => undef,
 	default => sub { {} },

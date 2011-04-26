@@ -4,6 +4,7 @@ use Any::Moose;
 has callback => (
 	is => 'ro',
 	isa => 'CodeRef',
+	traits => ['Code'],
 	required => 1,
 	handles => {
 		execute => 'execute',
