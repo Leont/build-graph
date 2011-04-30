@@ -22,7 +22,7 @@ $graph->add_action('noop' => sub { next_is($_[0]) });
 
 my $dirname = '_testing';
 $graph->add_file($dirname, action => 'mkdir');
-END { rmtree $dirname };
+END { rmtree $dirname }
 $SIG{INT} = sub { rmtree $dirname; kill INT => $$ };
 
 my $source1_filename = catfile($dirname, 'source1');
@@ -39,9 +39,9 @@ my @sorted = $graph->_sort_nodes('build');
 
 is_deeply \@sorted, [ $dirname, $source1_filename, $source2_filename, 'build' ], 'topological sort is ok';
 
-my @runs = qw/build test install/;
+my @runs     = qw/build test install/;
 my %expected = (
-	build => [ 
+	build => [
 		[qw{_testing _testing/source1 _testing/source2 build}],
 		[qw/build/],
 
@@ -57,14 +57,14 @@ my %expected = (
 		[qw{_testing/source1 _testing/source2 build}],
 		[qw/build/],
 	],
-	test => [ [qw{_testing _testing/source1 _testing/source2 build test}], [qw/build test/] ],
+	test    => [ [qw{_testing _testing/source1 _testing/source2 build test}],    [qw/build test/] ],
 	install => [ [qw{_testing _testing/source1 _testing/source2 build install}], [qw/build install/] ],
 );
 
 my ($run, @expected);
 sub next_is {
-	my $gotten = shift;
-	my $index = first_index { $_ eq $gotten } @expected;
+	my $gotten   = shift;
+	my $index    = first_index { $_ eq $gotten } @expected;
 	my $expected = $expected[0];
 	splice @expected, $index, 1 if $index > -1;
 	local $Test::Builder::Level = $Test::Builder::Level + 1;

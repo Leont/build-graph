@@ -4,27 +4,27 @@ use Any::Moose;
 use Graph::Dependency::Dependencies;
 
 has phony => (
-	is => 'ro',
-	isa => 'Bool',
+	is       => 'ro',
+	isa      => 'Bool',
 	required => 1,
 );
 
 has dependencies => (
-	is => 'ro',
-	isa => 'Graph::Dependency::Dependencies',
-	coerce => 1,
+	is      => 'ro',
+	isa     => 'Graph::Dependency::Dependencies',
+	coerce  => 1,
 	default => sub { Graph::Dependency::Dependencies->new },
 );
 
 has action => (
-	is => 'rw',
-	isa => 'Str',
+	is       => 'rw',
+	isa      => 'Str',
 	required => 1,
 );
 
 has arguments => (
-	isa => 'HashRef',
-	traits => ['Hash'],
+	isa     => 'HashRef',
+	traits  => ['Hash'],
 	handles => {
 		get_argument  => 'get',
 		set_argument  => 'set',
@@ -37,10 +37,10 @@ has arguments => (
 sub to_hashref {
 	my $self = shift;
 	return {
-		phony => $self->phony,
+		phony        => $self->phony,
 		dependencies => $self->dependencies->to_hashref,
-		action => $self->action,
-		arguments => { $self->_arguments },
+		action       => $self->action,
+		arguments    => { $self->_arguments },
 	};
 }
 

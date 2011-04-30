@@ -5,13 +5,13 @@ use Graph::Dependency::Node;
 use List::MoreUtils qw//;
 
 has nodes => (
-	isa => 'HashRef[Graph::Dependency::Node]',
-	traits => ['Hash'],
+	isa      => 'HashRef[Graph::Dependency::Node]',
+	traits   => ['Hash'],
 	init_arg => undef,
-	default => sub { {} },
-	handles => {
-		get_node => 'get',
-		'_set_node' => 'set',
+	default  => sub { {} },
+	handles  => {
+		get_node    => 'get',
+		_set_node   => 'set',
 	},
 );
 
@@ -32,14 +32,14 @@ sub add_phony {
 }
 
 has actions => (
-	isa => 'HashRef[CodeRef]',
-	traits => ['Hash'],
+	isa      => 'HashRef[CodeRef]',
+	traits   => ['Hash'],
 	init_arg => undef,
-	default => sub { {} },
-	handles => {
+	default  => sub { {} },
+	handles  => {
 		all_actions => 'keys',
-		get_action => 'get',
-		add_action => 'set',
+		get_action  => 'get',
+		add_action  => 'set',
 	},
 );
 
