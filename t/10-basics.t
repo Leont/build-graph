@@ -14,29 +14,30 @@ use List::MoreUtils qw/first_index/;
 
 use Graph::Dependency;
 
-my $ast = Graph::Dependency->new;
+my $graph = Graph::Dependency->new;
+
+$graph->add_action('mkdir' => sub { next_is($_[0]); mkdir $_[0] });
+$graph->add_action('spew' => sub { my ($name, $node) = @_; next_is($name); spew($name, $node->get_argument('content')) });
+$graph->add_action('noop' => sub { next_is($_[0]) });
 
 my $dirname = '_testing';
-$ast->add_file($dirname, action => 'mkdir');
+$graph->add_file($dirname, action => 'mkdir');
 END { rmtree $dirname };
+$SIG{INT} = sub { rmtree $dirname; kill INT => $$ };
 
 my $source1_filename = catfile($dirname, 'source1');
-$ast->add_file($source1_filename, action => 'cat', arguments => { content => 'Hello' }, dependencies => [ $dirname ]);
+$graph->add_file($source1_filename, action => 'spew', arguments => { content => 'Hello' }, dependencies => [ $dirname ]);
 
 my $source2_filename = catfile($dirname, 'source2');
-$ast->add_file($source2_filename, action => 'cat', arguments => { content => 'World' }, dependencies => [ $dirname, $source1_filename ]);
+$graph->add_file($source2_filename, action => 'spew', arguments => { content => 'World' }, dependencies => [ $dirname, $source1_filename ]);
 
-$ast->add_phony('build', action => 'noop', dependencies => [ $source1_filename, $source2_filename ]);
-$ast->add_phony('test', action => 'noop', dependencies => [ 'build' ]);
-$ast->add_phony('install', action => 'noop', dependencies => [ 'build' ]);
+$graph->add_phony('build', action => 'noop', dependencies => [ $source1_filename, $source2_filename ]);
+$graph->add_phony('test', action => 'noop', dependencies => [ 'build' ]);
+$graph->add_phony('install', action => 'noop', dependencies => [ 'build' ]);
 
-my @sorted = $ast->_sort_nodes('build');
+my @sorted = $graph->_sort_nodes('build');
 
 is_deeply \@sorted, [ $dirname, $source1_filename, $source2_filename, 'build' ], 'topological sort is ok';
-
-$ast->add_action('mkdir' => sub { next_is($_[0]); mkdir $_[0] });
-$ast->add_action('cat' => sub { my ($name, $node) = @_; next_is($name); spew($name, $node->get_argument('content')) });
-$ast->add_action('noop' => sub { next_is($_[0]) });
 
 my @runs = qw/build test install/;
 my %expected = (
@@ -79,7 +80,7 @@ for my $runner (sort keys %expected) {
 		}
 		else {
 			@expected = @{$runpart};
-			$ast->run($run, verbosity => 1);
+			$graph->run($run, verbosity => 1);
 			eq_or_diff \@expected, [], "\@expected is empty at the end of run $run";
 			diag(sprintf "Still expecting %s", join ', ', map { "'$_'" } @expected) if @expected;
 			sleep 1;
