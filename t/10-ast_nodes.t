@@ -21,14 +21,14 @@ $ast->add_file($dirname, action => 'mkdir');
 END { rmtree $dirname };
 
 my $source1_filename = catfile($dirname, 'source1');
-$ast->add_file($source1_filename, action => 'cat', arguments => { content => 'Hello' }, dependencies => { $dirname => 'dir' });
+$ast->add_file($source1_filename, action => 'cat', arguments => { content => 'Hello' }, dependencies => [ $dirname ]);
 
 my $source2_filename = catfile($dirname, 'source2');
-$ast->add_file($source2_filename, action => 'cat', arguments => { content => 'Would' }, dependencies => { $dirname => 'dir', $source1_filename => 'other' });
+$ast->add_file($source2_filename, action => 'cat', arguments => { content => 'World' }, dependencies => [ $dirname, $source1_filename ]);
 
-$ast->add_phony('build', action => 'noop', dependencies => { $source1_filename => 'file', $source2_filename => 'file' });
-$ast->add_phony('test', action => 'noop', dependencies => { build => 'build' });
-$ast->add_phony('install', action => 'noop', dependencies => { build => 'build' });
+$ast->add_phony('build', action => 'noop', dependencies => [ $source1_filename, $source2_filename ]);
+$ast->add_phony('test', action => 'noop', dependencies => [ 'build' ]);
+$ast->add_phony('install', action => 'noop', dependencies => [ 'build' ]);
 
 my @sorted = $ast->_sort_nodes('build');
 

@@ -2,44 +2,69 @@ package Graph::Dependency::Dependencies;
 use Any::Moose;
 use Any::Moose 'Util::TypeConstraints';
 use List::MoreUtils qw//;
+use Carp qw//;
 
-coerce 'Graph::Dependency::Dependencies', from 'HashRef[Str]', via { Graph::Dependency::Dependencies->new(dependencies => $_) };
+coerce 'Graph::Dependency::Dependencies', from 'HashRef', via {
+	my %deps = %{$_};
+	for my $value (values %deps) {
+		next if ref $value;
+		$value = defined $value ? [$value] : [];
+	}
+	Graph::Dependency::Dependencies->new(dependencies => \%deps);
+};
+coerce 'Graph::Dependency::Dependencies', from 'ArrayRef', via {
+	my %deps = map { $_ => [] } @{$_};
+	Graph::Dependency::Dependencies->new(dependencies => \%deps);
+};
 
-has dependencies => (
-	isa => 'HashRef[Str]',
-	default => sub { {} },
+has _dependencies => (
+	is       => 'ro',
+	isa      => 'HashRef[ArrayRef[Str]]',
+	default  => sub { {} },
 	init_arg => 'dependencies',
-	traits => ['Hash'],
-	handles => {
-		all  => 'keys',
-		_kv  => 'kv',
-		has  => 'count',
-		get  => 'get',
-		set  => 'set',
+	traits   => ['Hash'],
+	handles  => {
+		all    => 'keys',
+		_kv    => 'kv',
+		_get   => 'get',
 		delete => 'delete',
-		_flat => 'elements',
-		_types => 'values',
+		_flat  => 'elements',
 	},
 );
 
-sub types {
-	my $self = shift;
-	return List::MoreUtils::uniq($self->_types);
+sub types_for {
+	my ($self, $name) = @_;
+	my $types = $self->_get($name) or Carp::croak("$name is not a dependency of this node");
+	return @{$types};
 }
 
-sub for_type {
+sub with_type {
 	my ($self, $wanted_type) = @_;
 	my @ret;
 	for my $pair ($self->_kv) {
-		my ($name, $type) = @{$pair};
-		push @ret, $name if $type eq $wanted_type;
+		my ($name, $types) = @{$pair};
+		push @ret, $name if List::MoreUtils::any { $_ eq $wanted_type } @{$types};
 	}
 	return @ret;
 }
 
+sub add {
+	my ($self, $name, @types) = @_;
+	push @{ $self->_dependencies }, @types;
+	return;
+}
+
+sub remove_type {
+	my ($self, $name, $type) = @_;
+	my $list = $self->_get($name) or return;
+	@{$list} = grep { $_ ne $type } @{$list};
+	$self->delete($name) if not @{$list};
+	return;
+}
+
 sub to_hashref {
 	my $self = shift;
-	return { $self->_flat_elements };
+	return { $self->_flat };
 }
 
 1;
@@ -48,8 +73,30 @@ sub to_hashref {
 
 __END__
 
-=method for_type
+=method all()
 
-=method to_hashref
+Returns all dependencies, in an indeterminate order.
 
-=method types
+=method add($dep, @types)
+
+Creates a dependency on $dep, and adds C<@types> to that.
+
+=method delete($dep)
+
+Deletes the dependency C<$dep>.
+
+=method with_type($type)
+
+Returns all dependencies with a certain C<$type>.
+
+=method to_hashref()
+
+Converts the dependencies to a 'simple' hashref representation.
+
+=method types_for($dep)
+
+Return all types for $dep.
+
+=method remove_type($dep, $type)
+
+Removes a type from a dependency.
