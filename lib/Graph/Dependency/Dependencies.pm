@@ -1,6 +1,7 @@
 package Graph::Dependency::Dependencies;
 use Any::Moose;
 use Any::Moose 'Util::TypeConstraints';
+use List::MoreUtils qw//;
 
 coerce 'Graph::Dependency::Dependencies', from 'HashRef[Str]', via { Graph::Dependency::Dependencies->new(dependencies => $_) };
 
@@ -43,4 +44,12 @@ sub to_hashref {
 
 1;
 
+#ABSTRACT: A dependency node's set of dependencies
+
 __END__
+
+=method for_type
+
+=method to_hashref
+
+=method types

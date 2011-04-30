@@ -2,6 +2,7 @@ package Graph::Dependency;
 use Any::Moose;
 use Carp ();
 use Graph::Dependency::Node;
+use List::MoreUtils qw//;
 
 has nodes => (
 	isa => 'HashRef[Graph::Dependency::Node]',
@@ -17,7 +18,7 @@ has nodes => (
 sub add_file {
 	my ($self, $name, %args) = @_;
 	Carp::croak('File already exists in database') if !$args{override} && $self->get_node($name);
-	my $node = Graph::Dependency::Node->new(%args, graph => $self, phony => 0);
+	my $node = Graph::Dependency::Node->new(%args, phony => 0);
 	$self->_set_node($name, $node);
 	return;
 }
@@ -25,7 +26,7 @@ sub add_file {
 sub add_phony {
 	my ($self, $name, %args) = @_;
 	Carp::croak('Phony already exists in database') if !$args{override} && $self->get_node($name);
-	my $node = Graph::Dependency::Node->new(%args, graph => $self, phony => 1);
+	my $node = Graph::Dependency::Node->new(%args, phony => 1);
 	$self->_set_node($name, $node);
 	return;
 }
@@ -42,21 +43,23 @@ has actions => (
 	},
 );
 
+my $node_sorter;
+$node_sorter = sub {
+	my ($self, $current, $list, $seen, $loop) = @_;
+	return if $seen->{$current}++;
+	Carp::croak("$current has a circular dependency, aborting!\n") if exists $loop->{$current};
+	my $node = $self->get_node($current) or Carp::croak("Node $current doesn't exist");
+	my %new_loop = (%{$loop}, $current => 1);
+	$self->$node_sorter($_, $list, $seen, \%new_loop) for $node->dependencies->all;
+	push @{$list}, $current;
+	return;
+};
+
 sub _sort_nodes {
 	my ($self, $startpoint) = @_;
 	my @ret;
-	$self->_node_sorter($startpoint, \@ret, {});
+	$self->$node_sorter($startpoint, \@ret, {}, {});
 	return @ret;
-}
-
-sub _node_sorter {
-	my ($self, $current, $list, $seen, %loop) = @_;
-	return if $seen->{$current}++;
-	Carp::croak("$current has a circular dependency, aborting!\n") if $loop{$current};
-	my $node = $self->get_node($current) or Carp::croak("Node $current doesn't exist");
-	$self->_node_sorter($_, $list, $seen, %loop, $current => 1) for $node->dependencies->all;
-	push @{$list}, $current;
-	return;
 }
 
 my $newer = sub {
@@ -76,15 +79,18 @@ sub run {
 			next if $seen_phony{$node_name}++;
 		}
 		else {
-			my @files = grep { !$self->get_node($_)->phony } $node->dependencies->all;
-			next if -e $node_name and not grep { $newer->($node_name, $_) } @files;
+			my @files = grep { !$self->get_node($_)->phony } sort +$node->dependencies->all;
+			next if -e $node_name and not List::MoreUtils::any { $newer->($node_name, $_) } @files;
 		}
 		my $action = $self->get_action($node->action) or Carp::croak("Action ${ \$node->action } doesn't exist");
 		$action->($node_name, $node);
 	}
+	return;
 }
 
 1;
+
+# ABSTRACT: A simple dependency graph
 
 __END__
 
@@ -99,3 +105,5 @@ __END__
 =method get_action
 
 =method add_action
+
+=method run

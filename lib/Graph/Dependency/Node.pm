@@ -1,15 +1,7 @@
 package Graph::Dependency::Node;
 use Any::Moose;
-use List::MoreUtils qw//;
 
-use Graph::Dependency;
-
-has graph => (
-	is => 'ro',
-	isa => 'Graph::Dependency',
-	required => 1,
-	weak_ref => 1,
-);
+use Graph::Dependency::Dependencies;
 
 has phony => (
 	is => 'ro',
@@ -45,7 +37,6 @@ has arguments => (
 sub to_hashref {
 	my $self = shift;
 	return {
-		name => $self->name,
 		phony => $self->phony,
 		dependencies => $self->dependencies->to_hashref,
 		action => $self->action,
@@ -55,7 +46,9 @@ sub to_hashref {
 
 1;
 
-=attr graph
+#ABSTRACT: A dependency graph node
+
+__END__
 
 =attr phony
 
