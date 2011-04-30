@@ -12,9 +12,9 @@ use File::Basename qw/dirname/;
 use File::Path qw/mkpath rmtree/;
 use List::MoreUtils qw/first_index/;
 
-use Graph::Dependency::Abstract;
+use Graph::Dependency;
 
-my $ast = Graph::Dependency::Abstract->new;
+my $ast = Graph::Dependency->new;
 
 my $dirname = '_testing';
 $ast->add_file($dirname, action => 'mkdir');
@@ -34,9 +34,9 @@ my @sorted = $ast->_sort_nodes('build');
 
 is_deeply \@sorted, [ $dirname, $source1_filename, $source2_filename, 'build' ], 'topological sort is ok';
 
-$ast->add_action('mkdir' => Graph::Dependency::Abstract::Action::Sub->new(callback => sub { next_is($_[0]); mkdir $_[0] }));
-$ast->add_action('cat' => Graph::Dependency::Abstract::Action::Sub->new(callback => sub { my ($name, $node) = @_; next_is($name); spew($name, $node->get_argument('content')) }));
-$ast->add_action('noop' => Graph::Dependency::Abstract::Action::Sub->new(callback => sub { next_is($_[0]) }));
+$ast->add_action('mkdir' => Graph::Dependency::Action::Sub->new(callback => sub { next_is($_[0]); mkdir $_[0] }));
+$ast->add_action('cat' => Graph::Dependency::Action::Sub->new(callback => sub { my ($name, $node) = @_; next_is($name); spew($name, $node->get_argument('content')) }));
+$ast->add_action('noop' => Graph::Dependency::Action::Sub->new(callback => sub { next_is($_[0]) }));
 
 my @runs = qw/build test install/;
 my %expected = (

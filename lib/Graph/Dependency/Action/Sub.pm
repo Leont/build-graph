@@ -1,4 +1,4 @@
-package Graph::Dependency::Abstract::Action::Sub;
+package Graph::Dependency::Action::Sub;
 use Any::Moose;
 
 has callback => (
@@ -11,7 +11,7 @@ has callback => (
 	},
 );
 
-with 'Graph::Dependency::Abstract::Action';
+with 'Graph::Dependency::Action';
 
 1;
 

@@ -1,12 +1,12 @@
-package Graph::Dependency::Abstract::Node;
+package Graph::Dependency::Node;
 use Any::Moose;
 use List::MoreUtils qw//;
 
-use Graph::Dependency::Abstract;
+use Graph::Dependency;
 
 has graph => (
 	is => 'ro',
-	isa => 'Graph::Dependency::Abstract',
+	isa => 'Graph::Dependency',
 	required => 1,
 	weak_ref => 1,
 );

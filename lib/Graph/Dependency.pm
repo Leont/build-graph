@@ -1,11 +1,11 @@
-package Graph::Dependency::Abstract;
+package Graph::Dependency;
 use Any::Moose;
 use Carp ();
-use Graph::Dependency::Abstract::Node;
-use Graph::Dependency::Abstract::Action;
+use Graph::Dependency::Node;
+use Graph::Dependency::Action;
 
 has nodes => (
-	isa => 'HashRef[Graph::Dependency::Abstract::Node]',
+	isa => 'HashRef[Graph::Dependency::Node]',
 	traits => ['Hash'],
 	init_arg => undef,
 	default => sub { {} },
@@ -18,7 +18,7 @@ has nodes => (
 sub add_file {
 	my ($self, $name, %args) = @_;
 	Carp::croak('File already exists in database') if !$args{override} && $self->get_node($name);
-	my $node = Graph::Dependency::Abstract::Node->new(%args, graph => $self, phony => 0);
+	my $node = Graph::Dependency::Node->new(%args, graph => $self, phony => 0);
 	$self->_set_node($name, $node);
 	return;
 }
@@ -26,13 +26,13 @@ sub add_file {
 sub add_phony {
 	my ($self, $name, %args) = @_;
 	Carp::croak('Phony already exists in database') if !$args{override} && $self->get_node($name);
-	my $node = Graph::Dependency::Abstract::Node->new(%args, graph => $self, phony => 1);
+	my $node = Graph::Dependency::Node->new(%args, graph => $self, phony => 1);
 	$self->_set_node($name, $node);
 	return;
 }
 
 has actions => (
-	isa => 'HashRef[Graph::Dependency::Abstract::Action]',
+	isa => 'HashRef[Graph::Dependency::Action]',
 	traits => ['Hash'],
 	init_arg => undef,
 	default => sub { {} },
