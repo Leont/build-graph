@@ -24,7 +24,6 @@ has _dependencies => (
 	traits => ['Hash'],
 	handles => {
 		all_dependencies  => 'keys',
-		_dependencies_types => 'values',
 		_kv_dependencies  => 'kv',
 		has_dependencies  => 'count',
 		get_dependency    => 'get',
@@ -67,16 +66,6 @@ has arguments => (
 	default => sub { {} },
 );
 
-sub compile {
-	my ($self, $name, $compiling) = @_;
-
-	return $compiling->get_compiled($self) if defined $compiling->get_compiled($self);
-	my $optype = 'Graph::Dependency::OP::' . ($self->phony ? 'Phony' : 'File');
-	my ($action, $message) = $self->graph->action_for($self->action)->compile($self);
-	my @dependencies = map { $self->graph->get_node($_)->compile($_, $compiling) } $self->all_dependencies;
-	return $optype->new(filename => $name, dependencies => \@dependencies, action => $action, message => $message);
-}
-
 sub to_hashref {
 	my $self = shift;
 	return {
@@ -99,7 +88,5 @@ sub to_hashref {
 =attr action
 
 =attr arguments
-
-=method compile
 
 =method to_hashref

@@ -43,13 +43,6 @@ has actions => (
 	},
 );
 
-sub compile {
-	my ($self, $startpoint) = @_;
-	my $compiler = Graph::Dependency::Compiling->new;
-	$self->get_node($startpoint)->compile($startpoint, $compiler);
-	return Graph::Dependency::OP->new(nodes => { $compiler->all_compiled });
-}
-
 sub _sort_nodes {
 	my ($self, $startpoint) = @_;
 	my @ret;
@@ -77,7 +70,6 @@ my $newer = sub {
 sub run {
 	my ($self, $startpoint) = @_;
 	my @nodes = $self->_sort_nodes($startpoint);
-	die join ', ', @nodes if $nodes[0] ne '_testing';
 	my %seen_phony;
 	for my $node_name (@nodes) {
 		my $node = $self->get_node($node_name);
@@ -108,6 +100,3 @@ __END__
 =method get_action
 
 =method add_action
-
-=method compile
-
