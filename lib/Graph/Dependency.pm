@@ -54,7 +54,7 @@ sub _node_sorter {
 	return if $seen->{$current}++;
 	Carp::croak("$current has a circular dependency, aborting!\n") if $loop{$current};
 	my $node = $self->get_node($current) or Carp::croak("Node $current doesn't exist");
-	$self->_node_sorter($_, $list, $seen, %loop, $current => 1) for $node->all_dependencies;
+	$self->_node_sorter($_, $list, $seen, %loop, $current => 1) for $node->dependencies->all;
 	push @{$list}, $current;
 	return;
 }
@@ -76,7 +76,7 @@ sub run {
 			next if $seen_phony{$node_name}++;
 		}
 		else {
-			my @files = grep { !$self->get_node($_)->phony } $node->all_dependencies;
+			my @files = grep { !$self->get_node($_)->phony } $node->dependencies->all;
 			next if -e $node_name and not grep { $newer->($node_name, $_) } @files;
 		}
 		my $action = $self->get_action($node->action) or Carp::croak("Action ${ \$node->action } doesn't exist");

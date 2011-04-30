@@ -17,36 +17,12 @@ has phony => (
 	required => 1,
 );
 
-has _dependencies => (
-	isa => 'HashRef[Str]',
-	default => sub { {} },
-	init_arg => 'dependencies',
-	traits => ['Hash'],
-	handles => {
-		all_dependencies  => 'keys',
-		_kv_dependencies  => 'kv',
-		has_dependencies  => 'count',
-		get_dependency    => 'get',
-		set_dependency    => 'set',
-		delete_dependency => 'delete',
-		_flat_dependencies => 'elements',
-	},
+has dependencies => (
+	is => 'ro',
+	isa => 'Graph::Dependency::Dependencies',
+	coerce => 1,
+	default => sub { Graph::Dependency::Dependencies->new },
 );
-
-sub dependency_types {
-	my $self = shift;
-	return List::MoreUtils::uniq($self->_dependency_types);
-}
-
-sub dependencies_for_type {
-	my ($self, $wanted_type) = @_;
-	my @ret;
-	for my $pair ($self->_kv_dependencies) {
-		my ($name, $type) = @{$pair};
-		push @ret, $name if $type eq $wanted_type;
-	}
-	return @ret;
-}
 
 has action => (
 	is => 'rw',
@@ -71,7 +47,7 @@ sub to_hashref {
 	return {
 		name => $self->name,
 		phony => $self->phony,
-		dependencies => { $self->_flat_dependencies },
+		dependencies => $self->dependencies->to_hashref,
 		action => $self->action,
 		arguments => { $self->_arguments },
 	};
