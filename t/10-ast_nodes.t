@@ -34,9 +34,9 @@ my @sorted = $ast->_sort_nodes('build');
 
 is_deeply \@sorted, [ $dirname, $source1_filename, $source2_filename, 'build' ], 'topological sort is ok';
 
-$ast->add_action('mkdir' => Graph::Dependency::Action::Sub->new(callback => sub { next_is($_[0]); mkdir $_[0] }));
-$ast->add_action('cat' => Graph::Dependency::Action::Sub->new(callback => sub { my ($name, $node) = @_; next_is($name); spew($name, $node->get_argument('content')) }));
-$ast->add_action('noop' => Graph::Dependency::Action::Sub->new(callback => sub { next_is($_[0]) }));
+$ast->add_action('mkdir' => sub { next_is($_[0]); mkdir $_[0] });
+$ast->add_action('cat' => sub { my ($name, $node) = @_; next_is($name); spew($name, $node->get_argument('content')) });
+$ast->add_action('noop' => sub { next_is($_[0]) });
 
 my @runs = qw/build test install/;
 my %expected = (

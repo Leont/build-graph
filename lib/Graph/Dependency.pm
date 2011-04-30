@@ -2,7 +2,6 @@ package Graph::Dependency;
 use Any::Moose;
 use Carp ();
 use Graph::Dependency::Node;
-use Graph::Dependency::Action;
 
 has nodes => (
 	isa => 'HashRef[Graph::Dependency::Node]',
@@ -32,7 +31,7 @@ sub add_phony {
 }
 
 has actions => (
-	isa => 'HashRef[Graph::Dependency::Action]',
+	isa => 'HashRef[CodeRef]',
 	traits => ['Hash'],
 	init_arg => undef,
 	default => sub { {} },
@@ -81,7 +80,7 @@ sub run {
 			next if -e $node_name and not grep { $newer->($node_name, $_) } @files;
 		}
 		my $action = $self->get_action($node->action) or Carp::croak("Action ${ \$node->action } doesn't exist");
-		$action->execute($node_name, $node);
+		$action->($node_name, $node);
 	}
 }
 
