@@ -15,10 +15,15 @@ use List::MoreUtils qw/first_index/;
 use Graph::Dependency;
 
 my $graph = Graph::Dependency->new;
+add_actions($graph);
 
-$graph->add_action('mkdir' => sub { next_is($_[0]); mkdir $_[0] });
-$graph->add_action('spew' => sub { my ($name, $node) = @_; next_is($name); spew($name, $node->get_argument('content')) });
-$graph->add_action('noop' => sub { next_is($_[0]) });
+sub add_actions {
+	my $current = shift;
+	$current->add_action('mkdir' => sub { next_is($_[0]); mkdir $_[0] });
+	$current->add_action('spew' => sub { my ($name, $node) = @_; next_is($name); spew($name, $node->get_argument('content')) });
+	$current->add_action('noop' => sub { next_is($_[0]) });
+	return;
+}
 
 my $dirname = '_testing';
 $graph->add_file($dirname, action => 'mkdir');
@@ -71,19 +76,26 @@ sub next_is {
 	is $gotten, $expected, sprintf "Expecting %s", (defined $expected ? "'$expected'" : 'undef');
 }
 
-for my $runner (sort keys %expected) {
-	rmtree $dirname;
-	$run = $runner;
-	for my $runpart (@{ $expected{$runner} }) {
-		if (ref($runpart) eq 'CODE') {
-			$runpart->();
-		}
-		else {
-			@expected = @{$runpart};
-			$graph->run($run, verbosity => 1);
-			eq_or_diff \@expected, [], "\@expected is empty at the end of run $run";
-			diag(sprintf "Still expecting %s", join ', ', map { "'$_'" } @expected) if @expected;
-			sleep 1;
+my $simple = $graph->nodes_to_hashref;
+my $clone = Graph::Dependency->new;
+$clone->load_from_hashref($simple);
+add_actions($clone);
+
+for my $current ($graph, $clone) {
+	for my $runner (sort keys %expected) {
+		rmtree $dirname;
+		$run = $runner;
+		for my $runpart (@{ $expected{$runner} }) {
+			if (ref($runpart) eq 'CODE') {
+				$runpart->();
+			}
+			else {
+				@expected = @{$runpart};
+				$current->run($run, verbosity => 1);
+				eq_or_diff \@expected, [], "\@expected is empty at the end of run $run";
+				diag(sprintf "Still expecting %s", join ', ', map { "'$_'" } @expected) if @expected;
+				sleep 1;
+			}
 		}
 	}
 }

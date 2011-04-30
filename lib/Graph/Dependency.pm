@@ -12,6 +12,7 @@ has nodes => (
 	handles  => {
 		get_node    => 'get',
 		_set_node   => 'set',
+		_node_names => 'keys',
 	},
 );
 
@@ -88,6 +89,23 @@ sub run {
 	return;
 }
 
+sub nodes_to_hashref {
+	my $self = shift;
+	my %ret;
+	for my $name ($self->_node_names) {
+		$ret{$name} = $self->get_node($name)->to_hashref;
+	}
+	return \%ret;
+}
+
+sub load_from_hashref {
+	my ($self, $serialized) = @_;
+	for my $key (keys %{$serialized}) {
+		$self->_set_node($key, Graph::Dependency::Node->new($serialized->{$key}));
+	}
+	return;
+}
+
 1;
 
 # ABSTRACT: A simple dependency graph
@@ -107,3 +125,7 @@ __END__
 =method add_action
 
 =method run
+
+=method nodes_to_hashref
+
+=method load_from_hashref
