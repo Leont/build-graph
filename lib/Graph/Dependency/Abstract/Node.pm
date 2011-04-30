@@ -2,6 +2,8 @@ package Graph::Dependency::Abstract::Node;
 use Any::Moose;
 use List::MoreUtils qw//;
 
+use Graph::Dependency::Abstract;
+
 has graph => (
 	is => 'ro',
 	isa => 'Graph::Dependency::Abstract',
@@ -18,6 +20,8 @@ has phony => (
 has _dependencies => (
 	isa => 'HashRef[Str]',
 	default => sub { {} },
+	init_arg => 'dependencies',
+	traits => ['Hash'],
 	handles => {
 		all_dependencies  => 'keys',
 		_dependencies_types => 'values',
@@ -30,12 +34,12 @@ has _dependencies => (
 	},
 );
 
-sub all_dependency_types {
+sub dependency_types {
 	my $self = shift;
 	return List::MoreUtils::uniq($self->_dependency_types);
 }
 
-sub dependency_for_type {
+sub dependencies_for_type {
 	my ($self, $wanted_type) = @_;
 	my @ret;
 	for my $pair ($self->_kv_dependencies) {
@@ -87,8 +91,6 @@ sub to_hashref {
 1;
 
 =attr graph
-
-=attr name
 
 =attr phony
 
