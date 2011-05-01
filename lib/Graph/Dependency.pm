@@ -47,8 +47,8 @@ has actions => (
 my $node_sorter;
 $node_sorter = sub {
 	my ($self, $current, $list, $seen, $loop) = @_;
-	return if $seen->{$current}++;
 	Carp::croak("$current has a circular dependency, aborting!\n") if exists $loop->{$current};
+	return if $seen->{$current}++;
 	my $node = $self->get_node($current) or Carp::croak("Node $current doesn't exist");
 	my %new_loop = (%{$loop}, $current => 1);
 	$self->$node_sorter($_, $list, $seen, \%new_loop) for $node->dependencies->all;
@@ -80,7 +80,7 @@ sub run {
 			next if $seen_phony{$node_name}++;
 		}
 		else {
-			my @files = grep { !$self->get_node($_)->phony } sort +$node->dependencies->all;
+			my @files = grep { !$self->get_node($_)->phony } sort $node->dependencies->all;
 			next if -e $node_name and not List::MoreUtils::any { $newer->($node_name, $_) } @files;
 		}
 		my $action = $self->get_action($node->action) or Carp::croak("Action ${ \$node->action } doesn't exist");
