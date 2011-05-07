@@ -12,9 +12,9 @@ use File::Basename qw/dirname/;
 use File::Path qw/mkpath rmtree/;
 use List::MoreUtils qw/first_index/;
 
-use Graph::Dependency;
+use Build::Graph;
 
-my $graph = Graph::Dependency->new;
+my $graph = Build::Graph->new;
 add_actions($graph);
 
 sub add_actions {
@@ -77,7 +77,7 @@ sub next_is {
 }
 
 my $simple = $graph->nodes_to_hashref;
-my $clone = Graph::Dependency->new;
+my $clone = Build::Graph->new;
 $clone->load_from_hashref($simple);
 add_actions($clone);
 

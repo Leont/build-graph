@@ -1,11 +1,11 @@
-package Graph::Dependency;
+package Build::Graph;
 use Any::Moose;
 use Carp ();
-use Graph::Dependency::Node;
+use Build::Graph::Node;
 use List::MoreUtils qw//;
 
 has nodes => (
-	isa      => 'HashRef[Graph::Dependency::Node]',
+	isa      => 'HashRef[Build::Graph::Node]',
 	traits   => ['Hash'],
 	init_arg => undef,
 	default  => sub { {} },
@@ -19,7 +19,7 @@ has nodes => (
 sub add_file {
 	my ($self, $name, %args) = @_;
 	Carp::croak('File already exists in database') if !$args{override} && $self->get_node($name);
-	my $node = Graph::Dependency::Node->new(%args, phony => 0);
+	my $node = Build::Graph::Node->new(%args, phony => 0);
 	$self->_set_node($name, $node);
 	return;
 }
@@ -27,7 +27,7 @@ sub add_file {
 sub add_phony {
 	my ($self, $name, %args) = @_;
 	Carp::croak('Phony already exists in database') if !$args{override} && $self->get_node($name);
-	my $node = Graph::Dependency::Node->new(%args, phony => 1);
+	my $node = Build::Graph::Node->new(%args, phony => 1);
 	$self->_set_node($name, $node);
 	return;
 }
@@ -101,7 +101,7 @@ sub nodes_to_hashref {
 sub load_from_hashref {
 	my ($self, $serialized) = @_;
 	for my $key (keys %{$serialized}) {
-		$self->_set_node($key, Graph::Dependency::Node->new($serialized->{$key}));
+		$self->_set_node($key, Build::Graph::Node->new($serialized->{$key}));
 	}
 	return;
 }

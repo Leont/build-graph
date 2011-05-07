@@ -1,7 +1,7 @@
-package Graph::Dependency::Node;
+package Build::Graph::Node;
 use Any::Moose;
 
-use Graph::Dependency::Dependencies;
+use Build::Graph::Dependencies;
 
 has phony => (
 	is       => 'ro',
@@ -11,9 +11,9 @@ has phony => (
 
 has dependencies => (
 	is      => 'ro',
-	isa     => 'Graph::Dependency::Dependencies',
+	isa     => 'Build::Graph::Dependencies',
 	coerce  => 1,
-	default => sub { Graph::Dependency::Dependencies->new },
+	default => sub { Build::Graph::Dependencies->new },
 );
 
 has action => (

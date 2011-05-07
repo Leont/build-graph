@@ -1,20 +1,20 @@
-package Graph::Dependency::Dependencies;
+package Build::Graph::Dependencies;
 use Any::Moose;
 use Any::Moose 'Util::TypeConstraints';
 use List::MoreUtils qw//;
 use Carp qw//;
 
-coerce 'Graph::Dependency::Dependencies', from 'HashRef', via {
+coerce 'Build::Graph::Dependencies', from 'HashRef', via {
 	my %deps = %{$_};
 	for my $value (values %deps) {
 		next if ref $value;
 		$value = defined $value ? [$value] : [];
 	}
-	Graph::Dependency::Dependencies->new(dependencies => \%deps);
+	Build::Graph::Dependencies->new(dependencies => \%deps);
 };
-coerce 'Graph::Dependency::Dependencies', from 'ArrayRef', via {
+coerce 'Build::Graph::Dependencies', from 'ArrayRef', via {
 	my %deps = map { $_ => [] } @{$_};
-	Graph::Dependency::Dependencies->new(dependencies => \%deps);
+	Build::Graph::Dependencies->new(dependencies => \%deps);
 };
 
 has _dependencies => (
