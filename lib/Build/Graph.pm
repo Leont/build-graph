@@ -2,6 +2,7 @@ package Build::Graph;
 use Any::Moose;
 use Carp ();
 use Build::Graph::Node;
+use Build::Graph::CommandSet;
 use List::MoreUtils qw//;
 
 has nodes => (
@@ -32,16 +33,10 @@ sub add_phony {
 	return;
 }
 
-has actions => (
-	isa      => 'HashRef[CodeRef]',
-	traits   => ['Hash'],
-	init_arg => undef,
-	default  => sub { {} },
-	handles  => {
-		all_actions => 'keys',
-		get_action  => 'get',
-		add_action  => 'set',
-	},
+has commands => (
+	is => 'ro',
+	isa => 'Build::Graph::CommandSet',
+	default => sub { Build::Graph::CommandSet->new },
 );
 
 my $node_sorter;
@@ -84,7 +79,7 @@ sub run {
 			next if -e $node_name and not List::MoreUtils::any { $newer->($node_name, $_) } @files;
 		}
 		for my $action ($node->actions) {
-			my $callback = $self->get_action($action->command) or Carp::croak("Command ${ \$action->command } doesn't exist");
+			my $callback = $self->commands->get($action->command) or Carp::croak("Command ${ \$action->command } doesn't exist");
 			$callback->($node_name, $action->arguments, $node->dependencies);
 		}
 	}
