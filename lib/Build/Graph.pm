@@ -83,8 +83,8 @@ sub run {
 			my @files = grep { !$self->get_node($_)->phony } sort $node->dependencies->all;
 			next if -e $node_name and not List::MoreUtils::any { $newer->($node_name, $_) } @files;
 		}
-		my $action = $self->get_action($node->action) or Carp::croak("Action ${ \$node->action } doesn't exist");
-		$action->($node_name, $node);
+		my $action = $self->get_action($node->action->command) or Carp::croak("Command ${ \$node->action->command } doesn't exist");
+		$action->($node_name, $node->action->arguments, $node->dependencies);
 	}
 	return;
 }

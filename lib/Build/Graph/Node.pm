@@ -2,6 +2,7 @@ package Build::Graph::Node;
 use Any::Moose;
 
 use Build::Graph::Dependencies;
+use Build::Graph::Action;
 
 has phony => (
 	is       => 'ro',
@@ -16,22 +17,11 @@ has dependencies => (
 	default => sub { Build::Graph::Dependencies->new },
 );
 
-has action => (
+has action   => (
 	is       => 'rw',
-	isa      => 'Str',
+	isa      => 'Build::Graph::Action',
+	coerce   => 1,
 	required => 1,
-);
-
-has arguments => (
-	isa     => 'HashRef',
-	traits  => ['Hash'],
-	handles => {
-		get_argument  => 'get',
-		set_argument  => 'set',
-		has_arguments => 'count',
-		_arguments    => 'elements',
-	},
-	default => sub { {} },
 );
 
 sub to_hashref {
@@ -39,8 +29,7 @@ sub to_hashref {
 	return {
 		phony        => $self->phony,
 		dependencies => $self->dependencies->to_hashref,
-		action       => $self->action,
-		arguments    => { $self->_arguments },
+		action       => $self->action->to_hashref,
 	};
 }
 
@@ -55,7 +44,5 @@ __END__
 =attr dependencies
 
 =attr action
-
-=attr arguments
 
 =method to_hashref

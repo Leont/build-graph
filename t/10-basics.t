@@ -20,7 +20,7 @@ add_actions($graph);
 sub add_actions {
 	my $current = shift;
 	$current->add_action('mkdir' => sub { next_is($_[0]); mkdir $_[0] });
-	$current->add_action('spew' => sub { my ($name, $node) = @_; next_is($name); spew($name, $node->get_argument('content')) });
+	$current->add_action('spew' => sub { my ($name, $arguments) = @_; next_is($name); spew($name, $arguments) });
 	$current->add_action('noop' => sub { next_is($_[0]) });
 	return;
 }
@@ -31,10 +31,10 @@ END { rmtree $dirname }
 $SIG{INT} = sub { rmtree $dirname; kill INT => $$ };
 
 my $source1_filename = catfile($dirname, 'source1');
-$graph->add_file($source1_filename, action => 'spew', arguments => { content => 'Hello' }, dependencies => [ $dirname ]);
+$graph->add_file($source1_filename, action => { command => 'spew', arguments => 'Hello' }, dependencies => [ $dirname ]);
 
 my $source2_filename = catfile($dirname, 'source2');
-$graph->add_file($source2_filename, action => 'spew', arguments => { content => 'World' }, dependencies => [ $dirname, $source1_filename ]);
+$graph->add_file($source2_filename, action => { command => 'spew', arguments => 'World' }, dependencies => [ $dirname, $source1_filename ]);
 
 $graph->add_phony('build', action => 'noop', dependencies => [ $source1_filename, $source2_filename ]);
 $graph->add_phony('test', action => 'noop', dependencies => [ 'build' ]);
