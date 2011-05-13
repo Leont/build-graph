@@ -17,11 +17,14 @@ has dependencies => (
 	default => sub { Build::Graph::Dependencies->new },
 );
 
-has action   => (
-	is       => 'rw',
-	isa      => 'Build::Graph::Action',
+has actions => (
+	isa      => 'Build::Graph::ActionList',
+	traits   => ['Array'],
 	coerce   => 1,
-	required => 1,
+	default  => sub { [] },
+	handles  => {
+		actions => 'elements',
+	}
 );
 
 sub to_hashref {
@@ -29,7 +32,7 @@ sub to_hashref {
 	return {
 		phony        => $self->phony,
 		dependencies => $self->dependencies->to_hashref,
-		action       => $self->action->to_hashref,
+		actions      => [ map { $_->to_hashref } $self->actions ],
 	};
 }
 
