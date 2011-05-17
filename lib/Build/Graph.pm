@@ -66,7 +66,7 @@ my $newer = sub {
 };
 
 sub run {
-	my ($self, $startpoint) = @_;
+	my ($self, $startpoint, @options) = @_;
 	my @nodes = $self->_sort_nodes($startpoint);
 	my %seen_phony;
 	for my $node_name (@nodes) {
@@ -80,7 +80,7 @@ sub run {
 		}
 		for my $action ($node->actions) {
 			my $callback = $self->commands->get($action->command) or Carp::croak("Command ${ \$action->command } doesn't exist");
-			$callback->($node_name, $action->arguments, $node->dependencies);
+			$callback->($node_name, $action->arguments, $node->dependencies, @options);
 		}
 	}
 	return;
