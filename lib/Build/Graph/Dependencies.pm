@@ -27,6 +27,7 @@ has _dependencies => (
 		all    => 'keys',
 		_kv    => 'kv',
 		_get   => 'get',
+		_set   => 'set',
 		delete => 'delete',
 		_flat  => 'elements',
 	},
@@ -50,7 +51,7 @@ sub with_type {
 
 sub add {
 	my ($self, $name, @types) = @_;
-	push @{ $self->_dependencies }, @types;
+	push @{ $self->_get($name) || $self->_set($name, []) }, @types;
 	return;
 }
 
