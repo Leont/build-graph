@@ -78,6 +78,7 @@ sub run {
 			my @files = grep { !$self->get_node($_)->phony } sort $node->dependencies->all;
 			next if -e $node_name and not List::MoreUtils::any { $newer->($node_name, $_) } @files;
 		}
+		$node->make_dir($node_name) if $node->need_dir;
 		for my $action ($node->actions) {
 			my $callback = $self->commands->get($action->command) or Carp::croak("Command ${ \$action->command } doesn't exist");
 			$callback->($node_name, $action->arguments, $node->dependencies, @options);

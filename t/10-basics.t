@@ -15,22 +15,20 @@ use List::MoreUtils qw/first_index/;
 use Build::Graph;
 
 my $command_set = Build::Graph::CommandSet->new;
-$command_set->add('mkdir' => sub { next_is($_[0]); mkdir $_[0] });
 $command_set->add('spew' => sub { my ($name, $arguments) = @_; next_is($name); spew($name, $arguments) });
 $command_set->add('poke' => sub { next_is('poke') });
 $command_set->add('noop' => sub { next_is($_[0]) });
 my $graph = Build::Graph->new(commands => $command_set);
 
 my $dirname = '_testing';
-$graph->add_file($dirname, actions => 'mkdir');
 END { rmtree $dirname }
 $SIG{INT} = sub { rmtree $dirname; kill INT => $$ };
 
 my $source1_filename = catfile($dirname, 'source1');
-$graph->add_file($source1_filename, actions => [ 'poke', { command => 'spew', arguments => 'Hello' } ], dependencies => [ $dirname ]);
+$graph->add_file($source1_filename, actions => [ 'poke', { command => 'spew', arguments => 'Hello' } ]);
 
 my $source2_filename = catfile($dirname, 'source2');
-$graph->add_file($source2_filename, actions => { command => 'spew', arguments => 'World' }, dependencies => [ $dirname, $source1_filename ]);
+$graph->add_file($source2_filename, actions => { command => 'spew', arguments => 'World' }, dependencies => [ $source1_filename ]);
 
 $graph->add_phony('build', actions => 'noop', dependencies => [ $source1_filename, $source2_filename ]);
 $graph->add_phony('test', actions => 'noop', dependencies => [ 'build' ]);
@@ -38,16 +36,16 @@ $graph->add_phony('install', actions => 'noop', dependencies => [ 'build' ]);
 
 my @sorted = $graph->_sort_nodes('build');
 
-is_deeply \@sorted, [ $dirname, $source1_filename, $source2_filename, 'build' ], 'topological sort is ok';
+is_deeply \@sorted, [ $source1_filename, $source2_filename, 'build' ], 'topological sort is ok';
 
 my @runs     = qw/build test install/;
 my %expected = (
 	build => [
-		[qw{_testing poke _testing/source1 _testing/source2 build}],
+		[qw{poke _testing/source1 _testing/source2 build}],
 		[qw/build/],
 
 		sub { rmtree $dirname },
-		[qw{_testing poke _testing/source1 _testing/source2 build}],
+		[qw{poke _testing/source1 _testing/source2 build}],
 		[qw/build/],
 
 		sub { unlink $source2_filename or die "Couldn't remove $source2_filename: $!" },
@@ -59,11 +57,11 @@ my %expected = (
 		[qw/build/],
 	],
 	test    => [
-		[qw{_testing poke _testing/source1 _testing/source2 build test}],
+		[qw{poke _testing/source1 _testing/source2 build test}],
 		[qw/build test/],
 	],
 	install => [
-		[qw{_testing poke _testing/source1 _testing/source2 build install}],
+		[qw{poke _testing/source1 _testing/source2 build install}],
 		[qw/build install/],
 	],
 );
