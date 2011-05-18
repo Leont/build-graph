@@ -29,23 +29,31 @@ coerce 'Build::Graph::ActionList',
 	};
 
 has command => (
-	is => 'rw',
-	isa => 'Str',
+	is       => 'rw',
+	isa      => 'Str',
 	required => 1,
 );
 
 has arguments => (
-	is => 'rw',
-	isa => 'Any',
+	is        => 'rw',
+	isa       => 'Any',
 	predicate => 'has_argument',
 );
 
 sub to_hashref {
 	my $self = shift;
 	return {
-		command => $self->command,
+		command   => $self->command,
 		arguments => $self->arguments
 	};
 }
 
 1;
+
+__END__
+
+=attr command
+
+=attr arguments
+
+=method to_hashref

@@ -34,8 +34,8 @@ sub add_phony {
 }
 
 has commands => (
-	is => 'ro',
-	isa => 'Build::Graph::CommandSet',
+	is      => 'ro',
+	isa     => 'Build::Graph::CommandSet',
 	default => sub { Build::Graph::CommandSet->new },
 );
 
