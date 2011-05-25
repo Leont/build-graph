@@ -41,20 +41,20 @@ has commands => (
 
 my $node_sorter;
 $node_sorter = sub {
-	my ($self, $current, $list, $seen, $loop) = @_;
+	my ($self, $current, $callback, $seen, $loop) = @_;
 	Carp::croak("$current has a circular dependency, aborting!\n") if exists $loop->{$current};
 	return if $seen->{$current}++;
 	my $node = $self->get_node($current) or Carp::croak("Node $current doesn't exist");
 	my %new_loop = (%{$loop}, $current => 1);
-	$self->$node_sorter($_, $list, $seen, \%new_loop) for $node->dependencies->all;
-	push @{$list}, $current;
+	$self->$node_sorter($_, $callback, $seen, \%new_loop) for $node->dependencies->all;
+	$callback->($current);
 	return;
 };
 
 sub _sort_nodes {
 	my ($self, $startpoint) = @_;
 	my @ret;
-	$self->$node_sorter($startpoint, \@ret, {}, {});
+	$self->$node_sorter($startpoint, sub { push @ret, $_[0] }, {}, {});
 	return @ret;
 }
 
@@ -65,25 +65,27 @@ my $newer = sub {
 	return -M $destination > -M $source;
 };
 
+my $run_node = sub {
+	my ($self, $node_name, $seen_phony, $options) = @_;
+	my $node = $self->get_node($node_name);
+	if ($node->phony) {
+		return if $seen_phony->{$node_name}++;
+	}
+	else {
+		my @files = grep { !$self->get_node($_)->phony } sort $node->dependencies->all;
+		return if -e $node_name and not List::MoreUtils::any { $newer->($node_name, $_) } @files;
+	}
+	$node->make_dir($node_name) if $node->need_dir;
+	for my $action ($node->actions) {
+		my $callback = $self->commands->get($action->command) or Carp::croak("Command ${ \$action->command } doesn't exist");
+		$callback->($node_name, $action->arguments, $node->dependencies, @{$options});
+	}
+};
+
 sub run {
 	my ($self, $startpoint, @options) = @_;
-	my @nodes = $self->_sort_nodes($startpoint);
 	my %seen_phony;
-	for my $node_name (@nodes) {
-		my $node = $self->get_node($node_name);
-		if ($node->phony) {
-			next if $seen_phony{$node_name}++;
-		}
-		else {
-			my @files = grep { !$self->get_node($_)->phony } sort $node->dependencies->all;
-			next if -e $node_name and not List::MoreUtils::any { $newer->($node_name, $_) } @files;
-		}
-		$node->make_dir($node_name) if $node->need_dir;
-		for my $action ($node->actions) {
-			my $callback = $self->commands->get($action->command) or Carp::croak("Command ${ \$action->command } doesn't exist");
-			$callback->($node_name, $action->arguments, $node->dependencies, @options);
-		}
-	}
+	$self->$node_sorter($startpoint, sub { $self->$run_node($_[0], \%seen_phony, \@options) }, {}, {});
 	return;
 }
 
