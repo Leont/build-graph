@@ -15,9 +15,9 @@ use List::MoreUtils qw/first_index/;
 use Build::Graph;
 
 my $command_set = Build::Graph::CommandSet->new;
-$command_set->add('spew' => sub { my ($name, $arguments) = @_; next_is($name); spew($name, $arguments) });
+$command_set->add('spew' => sub { my $info = shift; next_is($info->name); spew($info->name, $info->arguments) });
 $command_set->add('poke' => sub { next_is('poke') });
-$command_set->add('noop' => sub { next_is($_[0]) });
+$command_set->add('noop' => sub { next_is($_[0]->name) });
 my $graph = Build::Graph->new(commands => $command_set);
 
 my $dirname = '_testing';

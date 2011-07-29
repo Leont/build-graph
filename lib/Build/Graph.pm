@@ -4,6 +4,7 @@ use Carp ();
 use Build::Graph::Node;
 use Build::Graph::CommandSet;
 use List::MoreUtils qw//;
+use Module::Load qw//;
 
 has nodes => (
 	isa      => 'HashRef[Build::Graph::Node]',
@@ -37,6 +38,12 @@ has commands => (
 	is      => 'ro',
 	isa     => 'Build::Graph::CommandSet',
 	default => sub { Build::Graph::CommandSet->new },
+);
+
+has info_class => (
+	is      => 'ro',
+	isa     => 'Str',
+	default => 'Build::Graph::Info',
 );
 
 my $node_sorter;
@@ -78,14 +85,15 @@ my $run_node = sub {
 	$node->make_dir($node_name) if $node->need_dir;
 	for my $action ($node->actions) {
 		my $callback = $self->commands->get($action->command) or Carp::croak("Command ${ \$action->command } doesn't exist");
-		$callback->($node_name, $action->arguments, $node->dependencies, @{$options});
+		$callback->($self->info_class->new(name => $node_name, arguments => $action->arguments, dependencies => $node->dependencies, %{$options}));
 	}
 };
 
 sub run {
-	my ($self, $startpoint, @options) = @_;
+	my ($self, $startpoint, %options) = @_;
 	my %seen_phony;
-	$self->$node_sorter($startpoint, sub { $self->$run_node($_[0], \%seen_phony, \@options) }, {}, {});
+	Module::Load::load($self->info_class);
+	$self->$node_sorter($startpoint, sub { $self->$run_node($_[0], \%seen_phony, \%options) }, {}, {});
 	return;
 }
 
