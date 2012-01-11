@@ -15,12 +15,13 @@ has nodes => (
 		get_node    => 'get',
 		_set_node   => 'set',
 		_node_names => 'keys',
+		_has_node   => 'exists',
 	},
 );
 
 sub add_file {
 	my ($self, $name, %args) = @_;
-	Carp::croak('File already exists in database') if !$args{override} && $self->get_node($name);
+	Carp::croak("File '$name' already exists in database") if !$args{override} && $self->_has_node($name);
 	my $node = Build::Graph::Node->new(%args, phony => 0);
 	$self->_set_node($name, $node);
 	return;
@@ -28,7 +29,7 @@ sub add_file {
 
 sub add_phony {
 	my ($self, $name, %args) = @_;
-	Carp::croak('Phony already exists in database') if !$args{override} && $self->get_node($name);
+	Carp::croak("Phony '$name' already exists in database") if !$args{override} && $self->_has_node($name);
 	my $node = Build::Graph::Node->new(%args, phony => 1);
 	$self->_set_node($name, $node);
 	return;
@@ -52,8 +53,8 @@ $node_sorter = sub {
 	Carp::croak("$current has a circular dependency, aborting!\n") if exists $loop->{$current};
 	return if $seen->{$current}++;
 	my $node = $self->get_node($current) or Carp::croak("Node $current doesn't exist");
-	my %new_loop = (%{$loop}, $current => 1);
-	$self->$node_sorter($_, $callback, $seen, \%new_loop) for $node->dependencies->all;
+	local $loop->{$current} = 1;
+	$self->$node_sorter($_, $callback, $seen, $loop) for $node->dependencies->all;
 	$callback->($current);
 	return;
 };
