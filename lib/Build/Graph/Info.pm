@@ -20,3 +20,6 @@ has dependencies => (
 );
 
 1;
+
+#ABSTRACT: Runtime information for actions
+

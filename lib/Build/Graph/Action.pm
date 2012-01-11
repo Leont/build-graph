@@ -50,6 +50,8 @@ sub to_hashref {
 
 1;
 
+#ABSTRACT: A Build::Graph action
+
 __END__
 
 =attr command

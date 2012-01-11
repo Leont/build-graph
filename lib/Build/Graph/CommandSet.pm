@@ -15,3 +15,5 @@ has commands => (
 
 1;
 
+#ABSTRACT: The set of commands used in a build graph
+
