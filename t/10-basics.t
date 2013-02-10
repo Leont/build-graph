@@ -22,7 +22,7 @@ my $graph = Build::Graph->new(commands => $command_set);
 
 my $dirname = '_testing';
 END { rmtree $dirname }
-$SIG{INT} = sub { rmtree $dirname; kill INT => $$ };
+$SIG{INT} = sub { rmtree $dirname; die "Interrupted!\n" };
 
 my $source1_filename = catfile($dirname, 'source1');
 $graph->add_file($source1_filename, actions => [ 'poke', { command => 'spew', arguments => 'Hello' } ]);
