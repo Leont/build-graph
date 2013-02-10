@@ -61,8 +61,6 @@ sub to_hashref {
 
 #ABSTRACT: A dependency graph node
 
-__END__
-
 =attr phony
 
 =attr dependencies

@@ -72,8 +72,6 @@ sub to_hashref {
 
 #ABSTRACT: A dependency node's set of dependencies
 
-__END__
-
 =method all()
 
 Returns all dependencies, in an indeterminate order.

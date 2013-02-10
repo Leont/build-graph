@@ -119,8 +119,6 @@ sub load_from_hashref {
 
 # ABSTRACT: A simple dependency graph
 
-__END__
-
 =method get_node
 
 =method add_file

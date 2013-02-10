@@ -52,8 +52,6 @@ sub to_hashref {
 
 #ABSTRACT: A Build::Graph action
 
-__END__
-
 =attr command
 
 =attr arguments
