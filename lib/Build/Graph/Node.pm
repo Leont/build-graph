@@ -1,7 +1,6 @@
 package Build::Graph::Node;
 use Any::Moose;
 
-use Build::Graph::Dependencies;
 use Build::Graph::Action;
 
 use File::Basename qw//;
@@ -32,11 +31,15 @@ sub make_dir {
 	return;
 }
 
-has dependencies => (
+has _dependencies => (
 	is      => 'ro',
-	isa     => 'Build::Graph::Dependencies',
-	coerce  => 1,
-	default => sub { Build::Graph::Dependencies->new },
+	isa     => 'ArrayRef',
+	traits => ['Array'],
+	default => sub { [] },
+	init_arg => 'dependencies',
+	handles => {
+		dependencies => 'elements',
+	},
 );
 
 has actions => (
@@ -51,7 +54,7 @@ sub to_hashref {
 	my $self = shift;
 	return {
 		phony        => $self->phony,
-		dependencies => $self->dependencies->to_hashref,
+		dependencies => $self->_dependencies,
 		actions      => [ map { $_->to_hashref } $self->actions ],
 		$self->_has_need_dir_override ? (need_dir => $self->need_dir_override) : (),
 	};

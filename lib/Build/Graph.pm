@@ -54,7 +54,7 @@ $node_sorter = sub {
 	return if $seen->{$current}++;
 	my $node = $self->get_node($current) or Carp::croak("Node $current doesn't exist");
 	local $loop->{$current} = 1;
-	$self->$node_sorter($_, $callback, $seen, $loop) for $node->dependencies->all;
+	$self->$node_sorter($_, $callback, $seen, $loop) for $node->dependencies;
 	$callback->($current);
 	return;
 };
@@ -80,13 +80,13 @@ my $run_node = sub {
 		return if $seen_phony->{$node_name}++;
 	}
 	else {
-		my @files = grep { !$self->get_node($_)->phony } sort $node->dependencies->all;
+		my @files = grep { !$self->get_node($_)->phony } sort $node->dependencies;
 		return if -e $node_name and not List::MoreUtils::any { $newer->($node_name, $_) } @files;
 	}
 	$node->make_dir($node_name) if $node->need_dir;
 	for my $action ($node->actions) {
 		my $callback = $self->commands->get($action->command) or Carp::croak("Command ${ \$action->command } doesn't exist");
-		$callback->($self->info_class->new(name => $node_name, arguments => $action->arguments, dependencies => $node->dependencies, %{$options}));
+		$callback->($self->info_class->new(name => $node_name, arguments => $action->arguments, dependencies => [ $node->dependencies ], %{$options}));
 	}
 };
 

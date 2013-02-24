@@ -15,7 +15,7 @@ has arguments => (
 
 has dependencies => (
 	is => 'ro',
-	isa => 'Build::Graph::Dependencies',
+	isa => 'ArrayRef',
 	required => 1,
 );
 
