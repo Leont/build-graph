@@ -1,50 +1,46 @@
 package Build::Graph;
-use Any::Moose;
+use Moo;
 use Carp ();
 use Build::Graph::Node;
 use Build::Graph::CommandSet;
 use List::MoreUtils qw//;
 use Module::Load qw//;
 
-has nodes => (
-	isa      => 'HashRef[Build::Graph::Node]',
-	traits   => ['Hash'],
+has _nodes => (
+	is       => 'ro',
 	init_arg => undef,
 	default  => sub { {} },
-	handles  => {
-		get_node    => 'get',
-		_set_node   => 'set',
-		_node_names => 'keys',
-		_has_node   => 'exists',
-	},
 );
+
+sub get_node {
+	my ($self, $key) = @_;
+	return $self->_nodes->{$key};
+}
 
 sub add_file {
 	my ($self, $name, %args) = @_;
-	Carp::croak("File '$name' already exists in database") if !$args{override} && $self->_has_node($name);
+	Carp::croak("File '$name' already exists in database") if !$args{override} && exists $self->_nodes->{$name};
 	my $node = Build::Graph::Node->new(%args, phony => 0);
-	$self->_set_node($name, $node);
+	$self->_nodes->{$name} = $node;
 	return;
 }
 
 sub add_phony {
 	my ($self, $name, %args) = @_;
-	Carp::croak("Phony '$name' already exists in database") if !$args{override} && $self->_has_node($name);
+	Carp::croak("Phony '$name' already exists in database") if !$args{override} && exists $self->_nodes->{$name};
 	my $node = Build::Graph::Node->new(%args, phony => 1);
-	$self->_set_node($name, $node);
+	$self->_nodes->{$name} = $node;
 	return;
 }
 
 has commands => (
 	is      => 'ro',
-	isa     => 'Build::Graph::CommandSet',
 	default => sub { Build::Graph::CommandSet->new },
 );
 
 has info_class => (
 	is      => 'ro',
-	isa     => 'Str',
-	default => 'Build::Graph::Info',
+	default => sub { 'Build::Graph::Info' },
 );
 
 my $node_sorter;
@@ -101,7 +97,7 @@ sub run {
 sub nodes_to_hashref {
 	my $self = shift;
 	my %ret;
-	for my $name ($self->_node_names) {
+	for my $name (keys %{ $self->_nodes }) {
 		$ret{$name} = $self->get_node($name)->to_hashref;
 	}
 	return \%ret;
@@ -110,7 +106,7 @@ sub nodes_to_hashref {
 sub load_from_hashref {
 	my ($self, $serialized) = @_;
 	for my $key (keys %{$serialized}) {
-		$self->_set_node($key, Build::Graph::Node->new($serialized->{$key}));
+		$self->_nodes->{$key} = Build::Graph::Node->new($serialized->{$key});
 	}
 	return;
 }

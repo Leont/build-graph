@@ -1,5 +1,5 @@
 package Build::Graph::Node;
-use Any::Moose;
+use Moo;
 
 use Build::Graph::Action;
 
@@ -8,13 +8,11 @@ use File::Path qw//;
 
 has phony => (
 	is       => 'ro',
-	isa      => 'Bool',
 	required => 1,
 );
 
 has need_dir_override => (
 	is        => 'rw',
-	isa       => 'Bool',
 	init_arg  => 'need_dir',
 	predicate => '_has_need_dir_override',
 );
@@ -33,22 +31,56 @@ sub make_dir {
 
 has _dependencies => (
 	is      => 'ro',
-	isa     => 'ArrayRef',
-	traits => ['Array'],
 	default => sub { [] },
 	init_arg => 'dependencies',
-	handles => {
-		dependencies => 'elements',
+);
+
+sub dependencies {
+	my $self = shift;
+	return @{ $self->_dependencies };
+}
+
+sub add_dependencies {
+	my ($self, @dependencies) = @_;
+	push @{ $self->_dependencies }, @dependencies;
+	return;
+}
+
+my $from_string = sub {
+	my $value = shift;
+	return Build::Graph::Action->new(command => $value);
+};
+my $from_hashref = sub {
+	my $value = shift;
+	return Build::Graph::Action->new(%{$value});
+};
+
+has _actions => (
+	is      => 'ro',
+	default => sub { [] },
+	init_arg => 'actions',
+	coerce  => sub {
+		my $value = shift;
+		my $type = ref $value;
+		if ($type eq 'Build::Graph::Action') {
+			return [ $value ];
+		}
+		elsif ($type eq 'ARRAY') {
+			return [ map { ref() ? $from_hashref->($_) : $from_string->($_) } @{$value} ];
+		}
+		elsif ($type eq 'HASH') {
+			return [ $from_hashref->($value) ];
+		}
+		elsif ($type eq '') {
+			return [ $from_string->($value) ];
+		}
 	},
 );
 
-has actions => (
-	isa     => 'Build::Graph::ActionList',
-	traits  => ['Array'],
-	coerce  => 1,
-	default => sub { [] },
-	handles => { actions => 'elements' },
-);
+sub actions {
+	my $self = shift;
+	return @{ $self->_actions };
+}
 
 sub to_hashref {
 	my $self = shift;

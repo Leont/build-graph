@@ -1,17 +1,22 @@
 package Build::Graph::CommandSet;
-use Any::Moose;
+use Moo;
 
-has commands => (
-	isa      => 'HashRef[CodeRef]',
-	traits   => ['Hash'],
+has _commands => (
+	is       => 'ro',
 	init_arg => undef,
 	default  => sub { {} },
-	handles  => {
-		all => 'keys',
-		get => 'get',
-		add => 'set',
-	},
 );
+
+sub get {
+	my ($self, $key) = @_;
+	return $self->_commands->{$key};
+}
+
+sub add {
+	my ($self, $key, $value) = @_;
+	$self->_commands->{$key} = $value;
+	return;
+}
 
 1;
 
