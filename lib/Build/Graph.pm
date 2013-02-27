@@ -82,7 +82,7 @@ my $run_node = sub {
 	$node->make_dir($node_name) if $node->need_dir;
 	for my $action ($node->actions) {
 		my $callback = $self->commands->get($action->command) or Carp::croak("Command ${ \$action->command } doesn't exist");
-		$callback->($self->info_class->new(name => $node_name, arguments => $action->arguments, dependencies => [ $node->dependencies ], %{$options}));
+		$callback->($self->info_class->new(name => $node_name, arguments => $action->arguments, %{$options}));
 	}
 };
 
