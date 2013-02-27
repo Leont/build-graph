@@ -7,12 +7,12 @@ has name => (
 );
 
 has arguments => (
-	is => 'ro',
+	is       => 'ro',
 	required => 1,
 );
 
 has dependencies => (
-	is => 'ro',
+	is       => 'ro',
 	required => 1,
 );
 

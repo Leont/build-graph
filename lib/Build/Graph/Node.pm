@@ -30,8 +30,8 @@ sub make_dir {
 }
 
 has _dependencies => (
-	is      => 'ro',
-	default => sub { [] },
+	is       => 'ro',
+	default  => sub { [] },
 	init_arg => 'dependencies',
 );
 
@@ -56,14 +56,14 @@ my $from_hashref = sub {
 };
 
 has _actions => (
-	is      => 'ro',
-	default => sub { [] },
+	is       => 'ro',
+	default  => sub { [] },
 	init_arg => 'actions',
-	coerce  => sub {
+	coerce   => sub {
 		my $value = shift;
-		my $type = ref $value;
+		my $type  = ref $value;
 		if ($type eq 'Build::Graph::Action') {
-			return [ $value ];
+			return [$value];
 		}
 		elsif ($type eq 'ARRAY') {
 			return [ map { ref() ? $from_hashref->($_) : $from_string->($_) } @{$value} ];
