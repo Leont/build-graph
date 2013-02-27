@@ -2,12 +2,12 @@ package Build::Graph::Action;
 use Moo;
 
 has command => (
-	is       => 'rw',
+	is       => 'ro',
 	required => 1,
 );
 
 has arguments => (
-	is        => 'rw',
+	is        => 'ro',
 	predicate => 'has_arguments',
 );
 
