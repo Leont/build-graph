@@ -4,7 +4,7 @@ use Carp ();
 use Build::Graph::Node;
 use Build::Graph::CommandSet;
 use List::MoreUtils qw//;
-use Module::Load qw//;
+use Module::Runtime qw//;
 
 has _nodes => (
 	is       => 'ro',
@@ -89,7 +89,7 @@ my $run_node = sub {
 sub run {
 	my ($self, $startpoint, %options) = @_;
 	my %seen_phony;
-	Module::Load::load($self->info_class);
+	Module::Runtime::require_module($self->info_class);
 	$self->$node_sorter($startpoint, sub { $self->$run_node($_[0], \%seen_phony, \%options) }, {}, {});
 	return;
 }
