@@ -1,33 +1,13 @@
-package Build::Graph::Node;
+package Build::Graph::Node::Phony;
+
 use Moo;
 
 use Build::Graph::Action;
 
-use File::Basename qw//;
-use File::Path qw//;
-
-has phony => (
+has name => (
 	is       => 'ro',
 	required => 1,
 );
-
-has need_dir_override => (
-	is        => 'rw',
-	init_arg  => 'need_dir',
-	predicate => '_has_need_dir_override',
-);
-
-sub need_dir {
-	my $self = shift;
-	return $self->need_dir_override if $self->_has_need_dir_override;
-	return !$self->phony;
-}
-
-sub make_dir {
-	my ($self, $name) = @_;
-	File::Path::mkpath(File::Basename::dirname($name)) if $self->need_dir;
-	return;
-}
 
 has _dependencies => (
 	is       => 'ro',
@@ -82,21 +62,26 @@ sub actions {
 	return @{ $self->_actions };
 }
 
+sub run {
+	my ($self, $graph, $options) = @_;
+	for my $action ($self->actions) {
+		my $callback = $graph->commands->get($action->command) or Carp::croak("Command ${ \$action->command } doesn't exist");
+		$callback->($graph->info_class->new(name => $self->name, arguments => $action->arguments, %{$options}));
+	}
+}
+
 sub to_hashref {
 	my $self = shift;
 	return {
-		phony        => $self->phony,
 		dependencies => $self->_dependencies,
 		actions      => [ map { $_->to_hashref } $self->actions ],
-		$self->_has_need_dir_override ? (need_dir => $self->need_dir_override) : (),
+		class        => ref($self),
 	};
 }
 
 1;
 
-#ABSTRACT: A dependency graph node
-
-=attr phony
+#ABSTRACT: A dependency graph node for file targets
 
 =attr dependencies
 
@@ -104,6 +89,3 @@ sub to_hashref {
 
 =method to_hashref
 
-=method need_dir
-
-=method make_dir

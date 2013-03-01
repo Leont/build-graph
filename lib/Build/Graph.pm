@@ -1,15 +1,28 @@
 package Build::Graph;
+
 use Moo;
-use Carp ();
-use Build::Graph::Node;
+
 use Build::Graph::CommandSet;
-use List::MoreUtils qw//;
+use Carp qw//;
 use Module::Runtime qw//;
+
+use Build::Graph::Node::File;
+use Build::Graph::Node::Phony;
 
 has _nodes => (
 	is       => 'ro',
-	init_arg => undef,
+	init_arg => 'nodes',
 	default  => sub { {} },
+	coerce   => sub {
+		my $nodes = shift;
+		for my $key (keys %{$nodes}) {
+			if (ref($nodes->{$key}) eq 'HASH') {
+				my $class = delete $nodes->{$key}{class};
+				$nodes->{$key} = $class->new(%{ $nodes->{$key} }, name => $key);
+			}
+		}
+		return $nodes;
+	},
 );
 
 sub get_node {
@@ -20,7 +33,7 @@ sub get_node {
 sub add_file {
 	my ($self, $name, %args) = @_;
 	Carp::croak("File '$name' already exists in database") if !$args{override} && exists $self->_nodes->{$name};
-	my $node = Build::Graph::Node->new(%args, phony => 0);
+	my $node = Build::Graph::Node::File->new(%args, name => $name);
 	$self->_nodes->{$name} = $node;
 	return;
 }
@@ -28,7 +41,7 @@ sub add_file {
 sub add_phony {
 	my ($self, $name, %args) = @_;
 	Carp::croak("Phony '$name' already exists in database") if !$args{override} && exists $self->_nodes->{$name};
-	my $node = Build::Graph::Node->new(%args, phony => 1);
+	my $node = Build::Graph::Node::Phony->new(%args, name => $name);
 	$self->_nodes->{$name} = $node;
 	return;
 }
@@ -51,47 +64,22 @@ $node_sorter = sub {
 	my $node = $self->get_node($current) or Carp::croak("Node $current doesn't exist");
 	local $loop->{$current} = 1;
 	$self->$node_sorter($_, $callback, $seen, $loop) for $node->dependencies;
-	$callback->($current);
+	$callback->($current, $node);
 	return;
 };
+
+sub run {
+	my ($self, $startpoint, %options) = @_;
+	Module::Runtime::require_module($self->info_class);
+	$self->$node_sorter($startpoint, sub { $_[1]->run($self, \%options) }, {}, {});
+	return;
+}
 
 sub _sort_nodes {
 	my ($self, $startpoint) = @_;
 	my @ret;
 	$self->$node_sorter($startpoint, sub { push @ret, $_[0] }, {}, {});
 	return @ret;
-}
-
-my $newer = sub {
-	my ($destination, $source) = @_;
-	return 1 if not -e $source;
-	return 0 if -d $source;
-	return -M $destination > -M $source;
-};
-
-my $run_node = sub {
-	my ($self, $node_name, $seen_phony, $options) = @_;
-	my $node = $self->get_node($node_name);
-	if ($node->phony) {
-		return if $seen_phony->{$node_name}++;
-	}
-	else {
-		my @files = grep { !$self->get_node($_)->phony } sort $node->dependencies;
-		return if -e $node_name and not List::MoreUtils::any { $newer->($node_name, $_) } @files;
-	}
-	$node->make_dir($node_name) if $node->need_dir;
-	for my $action ($node->actions) {
-		my $callback = $self->commands->get($action->command) or Carp::croak("Command ${ \$action->command } doesn't exist");
-		$callback->($self->info_class->new(name => $node_name, arguments => $action->arguments, %{$options}));
-	}
-};
-
-sub run {
-	my ($self, $startpoint, %options) = @_;
-	my %seen_phony;
-	Module::Runtime::require_module($self->info_class);
-	$self->$node_sorter($startpoint, sub { $self->$run_node($_[0], \%seen_phony, \%options) }, {}, {});
-	return;
 }
 
 sub nodes_to_hashref {
@@ -101,14 +89,6 @@ sub nodes_to_hashref {
 		$ret{$name} = $self->get_node($name)->to_hashref;
 	}
 	return \%ret;
-}
-
-sub load_from_hashref {
-	my ($self, $serialized) = @_;
-	for my $key (keys %{$serialized}) {
-		$self->_nodes->{$key} = Build::Graph::Node->new($serialized->{$key});
-	}
-	return;
 }
 
 1;

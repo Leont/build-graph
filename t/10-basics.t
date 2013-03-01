@@ -77,8 +77,7 @@ sub next_is {
 }
 
 my $simple = $graph->nodes_to_hashref;
-my $clone = Build::Graph->new(commands => $command_set);
-$clone->load_from_hashref($simple);
+my $clone = Build::Graph->new(commands => $command_set, nodes => $simple);
 
 for my $current ($graph, $clone) {
 	for my $runner (sort keys %expected) {
