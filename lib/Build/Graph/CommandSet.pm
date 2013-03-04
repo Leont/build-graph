@@ -3,19 +3,13 @@ use Moo;
 
 has _commands => (
 	is       => 'ro',
-	init_arg => undef,
+	init_arg => 'commands',
 	default  => sub { {} },
 );
 
 sub get {
 	my ($self, $key) = @_;
 	return $self->_commands->{$key};
-}
-
-sub add {
-	my ($self, $key, $value) = @_;
-	$self->_commands->{$key} = $value;
-	return;
 }
 
 1;

@@ -1,4 +1,4 @@
-package Build::Graph::Role::Command;
+package Build::Graph::Role::CommandProvider;
 
 use Moo::Role;
 
