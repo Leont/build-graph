@@ -53,7 +53,7 @@ my %expected = (
 		[qw{_testing/source2 build}],
 		[qw/build/],
 
-		sub { unlink $source1_filename },
+		sub { unlink $source1_filename; sleep 1; },
 		[qw{poke _testing/source1 _testing/source2 build}],
 		[qw/build/],
 	],
@@ -67,36 +67,37 @@ my %expected = (
 	],
 );
 
-my ($run, @expected);
+my $run;
+our @got;
 sub next_is {
-	my $gotten   = shift;
-	my $index    = first_index { $_ eq $gotten } @expected;
-	my $expected = $expected[0];
-	splice @expected, $index, 1 if $index > -1;
-	local $Test::Builder::Level = $Test::Builder::Level + 1;
-	is $gotten, $expected, sprintf "Expecting %s", (defined $expected ? "'$expected'" : 'undef');
+	my $gotten = shift;
+	push @got, $gotten;
 }
 
 my $simple = $graph->nodes_to_hashref;
 my $clone = Build::Graph->new(commands => $command_set, nodes => $simple);
 
+my $is_clone = 0;
+my @desc = qw/original clone/;
 for my $current ($graph, $clone) {
 	for my $runner (sort keys %expected) {
 		rmtree $dirname;
 		$run = $runner;
+		my $count = 1;
 		for my $runpart (@{ $expected{$runner} }) {
 			if (ref($runpart) eq 'CODE') {
 				$runpart->();
 			}
 			else {
-				@expected = @{$runpart};
-				$current->run($run, verbosity => 1);
-				eq_or_diff \@expected, [], "\@expected is empty at the end of run $run";
-				diag(sprintf "Still expecting %s", join ', ', map { "'$_'" } @expected) if @expected;
-				sleep 1;
+				my @expected = map { catfile(File::Spec::Unix->splitdir($_)) } @{$runpart};
+				local @got;
+				$graph->run($run, verbosity => 1);
+				eq_or_diff \@expected, \@got, "\@got is @expected in run $run-$desc[$is_clone]-$count";
+				$count++;
 			}
 		}
 	}
+	$is_clone++;
 }
 
 done_testing();
