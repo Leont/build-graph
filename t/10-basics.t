@@ -10,7 +10,6 @@ use Carp qw/croak/;
 use File::Spec::Functions qw/catfile/;
 use File::Basename qw/dirname/;
 use File::Path qw/mkpath rmtree/;
-use List::MoreUtils qw/first_index/;
 
 use Build::Graph;
 

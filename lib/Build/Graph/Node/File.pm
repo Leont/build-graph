@@ -6,7 +6,6 @@ extends 'Build::Graph::Node::Phony';
 use Carp qw//;
 use File::Basename qw//;
 use File::Path qw//;
-use List::MoreUtils qw//;
 
 has need_dir_override => (
 	is        => 'rw',
@@ -14,19 +13,13 @@ has need_dir_override => (
 	predicate => '_has_need_dir_override',
 );
 
-my $newer = sub {
-	my ($destination, $source) = @_;
-	return 1 if not -e $source;
-	return 0 if -d $source;
-	return -M $destination > -M $source;
-};
-
 around run => sub {
 	my ($orig, $self, $graph, $options) = @_;
 	my $filename = $self->name;
 
 	my @files = grep { $graph->get_node($_)->isa(__PACKAGE__) } sort $self->dependencies;
-	return if -e $filename and not List::MoreUtils::any { $newer->($filename, $_) } @files;
+	
+	return if -e $filename and sub { -d $_ or -M $filename <= -M $_ or return 0 for @files; 1 }->();
 
 	File::Path::mkpath(File::Basename::dirname($filename)) if $self->_has_need_dir_override ? $self->need_dir_override : 1;
 
