@@ -65,9 +65,11 @@ sub actions {
 sub run {
 	my ($self, $graph, $options) = @_;
 	for my $action ($self->actions) {
-		my $callback = $graph->commands->get($action->command) or Carp::croak("Command ${ \$action->command } doesn't exist");
-		$callback->($graph->info_class->new(name => $self->name, arguments => $action->arguments, %{$options}));
+		my $command = $action->command;
+		my $callback = $graph->commandset->get($command) or Carp::croak("Command $command doesn't exist");
+		$callback->($graph->info_class->new(%{$options}, name => $self->name, arguments => $action->arguments));
 	}
+	return;
 }
 
 sub to_hashref {

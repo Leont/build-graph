@@ -12,27 +12,29 @@ use File::Basename qw/dirname/;
 use File::Path qw/mkpath rmtree/;
 
 use Build::Graph;
+use Build::Graph::CommandSet;
 
-my $command_set = Build::Graph::CommandSet->new(commands => {
+my $command_set = Build::Graph::CommandSet->new;
+$command_set->add('basic', module => undef, commands => {
 	'spew' => sub { my $info = shift; next_is($info->name); spew($info->name, $info->arguments) },
 	'poke' => sub { next_is('poke') },
 	'noop' => sub { next_is($_[0]->name) },
-}, );
-my $graph = Build::Graph->new(commands => $command_set);
+});
+my $graph = Build::Graph->new(commandset => $command_set);
 
 my $dirname = '_testing';
 END { rmtree $dirname }
 $SIG{INT} = sub { rmtree $dirname; die "Interrupted!\n" };
 
 my $source1_filename = catfile($dirname, 'source1');
-$graph->add_file($source1_filename, actions => [ 'poke', { command => 'spew', arguments => 'Hello' } ]);
+$graph->add_file($source1_filename, actions => [ 'basic/poke', { command => 'basic/spew', arguments => 'Hello' } ]);
 
 my $source2_filename = catfile($dirname, 'source2');
-$graph->add_file($source2_filename, actions => { command => 'spew', arguments => 'World' }, dependencies => [ $source1_filename ]);
+$graph->add_file($source2_filename, actions => { command => 'basic/spew', arguments => 'World' }, dependencies => [ $source1_filename ]);
 
-$graph->add_phony('build', actions => 'noop', dependencies => [ $source1_filename, $source2_filename ]);
-$graph->add_phony('test', actions => 'noop', dependencies => [ 'build' ]);
-$graph->add_phony('install', actions => 'noop', dependencies => [ 'build' ]);
+$graph->add_phony('build', actions => 'basic/noop', dependencies => [ $source1_filename, $source2_filename ]);
+$graph->add_phony('test', actions => 'basic/noop', dependencies => [ 'build' ]);
+$graph->add_phony('install', actions => 'basic/noop', dependencies => [ 'build' ]);
 
 my @sorted = $graph->_sort_nodes('build');
 

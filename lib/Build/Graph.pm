@@ -46,7 +46,7 @@ sub add_phony {
 	return;
 }
 
-has commands => (
+has commandset => (
 	is      => 'ro',
 	default => sub { Build::Graph::CommandSet->new },
 );

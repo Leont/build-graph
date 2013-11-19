@@ -1,15 +1,33 @@
 package Build::Graph::CommandSet;
 use Moo;
 
-has _commands => (
+use Build::Graph::Group;
+
+has _groups => (
 	is       => 'ro',
-	init_arg => 'commands',
+	init_arg => 'groups',
 	default  => sub { {} },
 );
 
 sub get {
 	my ($self, $key) = @_;
-	return $self->_commands->{$key};
+	my ($groupname, $command) = split m{/}, $key, 2;
+	my $group = $self->_groups->{$groupname};
+	return $group->get($command) if $group;
+	return;
+}
+
+sub add {
+	my ($self, $name, %args) = @_;
+	$args{elements} = delete $args{commands};
+	my $command = Build::Graph::Group->new(%args);
+	$self->_groups->{ $name } = $command;
+	return;
+}
+
+sub all_for_group {
+	my ($self, $groupname) = @_;
+	return $self->_groups->{ $groupname }->all;
 }
 
 1;
