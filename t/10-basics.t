@@ -6,7 +6,6 @@ use warnings FATAL => 'all';
 use Test::More;
 use Test::Differences;
 
-use Carp qw/croak/;
 use File::Spec::Functions qw/catfile/;
 use File::Basename qw/dirname/;
 use File::Path qw/mkpath rmtree/;
@@ -14,12 +13,10 @@ use File::Path qw/mkpath rmtree/;
 use Build::Graph;
 use Build::Graph::CommandSet;
 
+use lib 't/lib';
+
 my $command_set = Build::Graph::CommandSet->new;
-$command_set->add('basic', module => undef, commands => {
-	'spew' => sub { my $info = shift; next_is($info->name); spew($info->name, $info->arguments) },
-	'poke' => sub { next_is('poke') },
-	'noop' => sub { next_is($_[0]->name) },
-});
+$command_set->include('Core');
 my $graph = Build::Graph->new(commandset => $command_set);
 
 my $dirname = '_testing';
@@ -102,12 +99,4 @@ for my $current ($graph, $clone) {
 }
 
 done_testing();
-
-sub spew {
-	my ($filename, $content) = @_;
-	open my $fh, '>', $filename or croak "Couldn't open file '$filename' for writing: $!\n";
-	print $fh $content;
-	close $fh or croak "couldn't close $filename: $!\n";
-	return;
-}
 

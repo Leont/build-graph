@@ -9,6 +9,14 @@ has _groups => (
 	default  => sub { {} },
 );
 
+has loader => (
+	is => 'ro',
+	default => sub {
+		require Build::Graph::ClassLoader;
+		return Build::Graph::ClassLoader->new;
+	}
+);
+
 sub get {
 	my ($self, $key) = @_;
 	my ($groupname, $command) = split m{/}, $key, 2;
@@ -22,6 +30,12 @@ sub add {
 	$args{elements} = delete $args{commands};
 	my $command = Build::Graph::Group->new(%args);
 	$self->_groups->{ $name } = $command;
+	return;
+}
+
+sub include {
+	my ($self, $provider) = @_;
+	$self->loader->load($provider)->configure_commands($self);
 	return;
 }
 
