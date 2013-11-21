@@ -44,6 +44,24 @@ sub all_for_group {
 	return $self->_groups->{ $groupname }->all;
 }
 
+sub to_hashref {
+	my $self = shift;
+	my %ret;
+	for my $group (keys %{ $self->_groups }) {
+		$ret{$group} = $self->_groups->{$group}->module;
+	}
+	return \%ret;
+}
+
+sub load {
+	my ($self, $hashref, $loader) = @_;
+	my $ret = Build::Graph::CommandSet->new(defined $loader ? (loader => $loader) : ());
+	for my $module (values %{ $hashref }) {
+		$ret->include($module);
+	}
+	return $ret;
+}
+
 1;
 
 #ABSTRACT: The set of commands used in a build graph

@@ -72,8 +72,7 @@ sub next_is {
 	push @got, $gotten;
 }
 
-my $simple = $graph->nodes_to_hashref;
-my $clone = Build::Graph->new(commands => $command_set, nodes => $simple);
+my $clone = Build::Graph->load($graph->to_hashref);
 
 my $is_clone = 0;
 my @desc = qw/original clone/;

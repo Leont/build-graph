@@ -82,13 +82,26 @@ sub _sort_nodes {
 	return @ret;
 }
 
-sub nodes_to_hashref {
+sub to_hashref {
 	my $self = shift;
-	my %ret;
-	for my $name (keys %{ $self->_nodes }) {
-		$ret{$name} = $self->get_node($name)->to_hashref;
-	}
+	return {
+		commandset => $self->commandset->to_hashref,
+		nodes => $self->_nodes_to_hashref,
+	};
+}
+
+sub _nodes_to_hashref {
+	my $self = shift;
+	my %ret = map { $_ => $self->get_node($_)->to_hashref } keys %{ $self->_nodes };
 	return \%ret;
+}
+
+sub load {
+	my ($self, $hashref, $loader) = @_;
+	return Build::Graph->new(
+		commandset => Build::Graph::CommandSet->load($hashref->{commandset}, $loader),
+		nodes => $hashref->{nodes},
+	);
 }
 
 1;
