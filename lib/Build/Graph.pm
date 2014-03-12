@@ -46,14 +46,37 @@ sub add_phony {
 	return;
 }
 
+has loader_class => (
+	is => 'ro',
+	default => 'Build::Graph::ClassLoader',
+);
+
+has loader_args => (
+	is => 'ro',
+	default => sub { {} },
+);
+
+has loader => (
+	is => 'lazy',
+	default => sub {
+		my $self = shift;
+		my $class = $self->loader_class;
+		Module::Runtime::require_module($class);
+		return $class->new(%{ $self->loader_args }, graph => $self);
+	},
+);
+
 has commandset => (
-	is      => 'ro',
-	default => sub { Build::Graph::CommandSet->new },
+	is      => 'lazy',
+	default => sub {
+		my $self = shift;
+		return Build::Graph::CommandSet->new(loader => $self->loader);
+	},
 );
 
 has info_class => (
 	is      => 'ro',
-	default => sub { 'Build::Graph::Info' },
+	default => 'Build::Graph::Info',
 );
 
 my $node_sorter;
@@ -86,7 +109,9 @@ sub to_hashref {
 	my $self = shift;
 	return {
 		commandset => $self->commandset->to_hashref,
-		nodes => $self->_nodes_to_hashref,
+		loader     => $self->loader->to_hashref,
+		nodes      => $self->_nodes_to_hashref,
+		info_class => $self->info_class,
 	};
 }
 
@@ -97,11 +122,18 @@ sub _nodes_to_hashref {
 }
 
 sub load {
-	my ($self, $hashref, $loader) = @_;
-	return Build::Graph->new(
-		commandset => Build::Graph::CommandSet->load($hashref->{commandset}, $loader),
-		nodes => $hashref->{nodes},
+	my ($self, $hashref) = @_;
+	my $loader_class = delete $hashref->{loader}{module};
+	my $ret = Build::Graph->new(
+		loader_class => $loader_class,
+		loader_args  => $hashref->{loader},
+		nodes        => $hashref->{nodes},
+		info_class   => $hashref->{info_class},
 	);
+	for my $module (values %{ $hashref->{commandset} }) {
+		$ret->commandset->load($module->{module});
+	}
+	return $ret;
 }
 
 1;

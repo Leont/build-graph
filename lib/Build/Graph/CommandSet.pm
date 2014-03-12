@@ -10,11 +10,8 @@ has _groups => (
 );
 
 has loader => (
-	is => 'ro',
-	default => sub {
-		require Build::Graph::ClassLoader;
-		return Build::Graph::ClassLoader->new;
-	}
+	is       => 'ro',
+	required => 1,
 );
 
 sub get {
@@ -33,7 +30,7 @@ sub add {
 	return;
 }
 
-sub include {
+sub load {
 	my ($self, $provider) = @_;
 	$self->loader->load($provider)->configure_commands($self);
 	return;
@@ -47,19 +44,13 @@ sub all_for_group {
 sub to_hashref {
 	my $self = shift;
 	my %ret;
-	for my $group (keys %{ $self->_groups }) {
-		$ret{$group} = $self->_groups->{$group}->module;
+	for my $name (keys %{ $self->_groups }) {
+		my $group = $self->_groups->{$name};
+		$ret{$name} = {
+			module => $group->module,
+		};
 	}
 	return \%ret;
-}
-
-sub load {
-	my ($self, $hashref, $loader) = @_;
-	my $ret = Build::Graph::CommandSet->new(defined $loader ? (loader => $loader) : ());
-	for my $module (values %{ $hashref }) {
-		$ret->include($module);
-	}
-	return $ret;
 }
 
 1;

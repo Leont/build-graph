@@ -15,9 +15,8 @@ use Build::Graph::CommandSet;
 
 use lib 't/lib';
 
-my $command_set = Build::Graph::CommandSet->new;
-$command_set->include('Core');
-my $graph = Build::Graph->new(commandset => $command_set);
+my $graph = Build::Graph->new;
+$graph->commandset->load('Core');
 
 my $dirname = '_testing';
 END { rmtree $dirname }
