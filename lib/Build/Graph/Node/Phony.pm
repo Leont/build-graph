@@ -74,9 +74,11 @@ sub run {
 
 sub to_hashref {
 	my $self = shift;
+	my @dependencies = $self->dependencies;
+	my @actions = map { $_->to_hashref } $self->actions;
 	return {
-		dependencies => $self->_dependencies,
-		actions      => [ map { $_->to_hashref } $self->actions ],
+		(dependencies => \@dependencies) x !!@dependencies,
+		(actions      => \@actions) x !!@actions,
 		class        => ref($self),
 	};
 }
