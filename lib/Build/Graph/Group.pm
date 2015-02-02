@@ -1,33 +1,39 @@
 package Build::Graph::Group;
-use Moo;
 
-has module => (
-	is       => 'ro',
-	required => 1,
-);
+use strict;
+use warnings;
 
-has _elements => (
-	is       => 'ro',
-	init_arg => 'elements',
-	default  => sub { {} },
-);
+use Carp ();
+
+sub new {
+	my ($class, %args) = @_;
+	return bless {
+		module   => $args{module}   || Carp::croak('No module given'),
+		elements => $args{elements} || {},
+	}, $class;
+}
+
+sub module {
+	my $self = shift;
+	return $self->{module};
+}
 
 sub get {
 	my ($self, $command) = @_;
-	return $self->_elements->{$command};
+	return $self->{elements}{$command};
 }
 
 sub add {
 	my ($self, %elements) = @_;
 	while (my ($key, $action) = each %elements) {
-		$self->_elements->{$key} = $action;
+		$self->{elements}{$key} = $action;
 	}
 	return;
 }
 
 sub all {
 	my $self = shift;
-	return keys %{ $self->_elements };
+	return keys %{ $self->{elements} };
 }
 
 1;
