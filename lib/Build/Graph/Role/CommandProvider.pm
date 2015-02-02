@@ -1,10 +1,11 @@
 package Build::Graph::Role::CommandProvider;
 
-use Moo::Role;
+use strict;
+use warnings;
 
-with 'Build::Graph::Role::Dependent';
+use parent 'Build::Graph::Role::Dependent';
 
-requires 'configure_commands';
+sub configure_commands;
 
 sub dependencies {
 	my $self = shift;

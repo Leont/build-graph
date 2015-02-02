@@ -1,7 +1,9 @@
 package Core;
 
-use Moo;
-with 'Build::Graph::Role::CommandProvider';
+use strict;
+use warnings;
+
+use parent 'Build::Graph::Role::CommandProvider';
 
 use Carp qw/croak/;
 

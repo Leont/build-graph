@@ -1,8 +1,9 @@
 package Build::Graph::Role::Dependent;
 
-use Moo::Role;
+use strict;
+use warnings;
 
-requires 'dependencies';
+sub dependencies;
 
 1;
 

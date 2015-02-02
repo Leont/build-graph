@@ -1,10 +1,11 @@
 package Build::Graph::Role::Manipulator;
 
-use Moo::Role;
+use strict;
+use warnings;
 
-with 'Build::Graph::Role::Dependent';
+use parent 'Build::Graph::Role::Dependent';
 
-requires qw/manipulate_graph/;
+sub manipulate_graph;
 
 1;
 
