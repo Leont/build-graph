@@ -19,7 +19,7 @@ my $graph = Build::Graph->new;
 $graph->commandset->load('Core');
 
 my $dirname = '_testing';
-END { rmtree $dirname }
+END { rmtree $dirname if defined $dirname }
 $SIG{INT} = sub { rmtree $dirname; die "Interrupted!\n" };
 
 my $source1_filename = catfile($dirname, 'source1');
