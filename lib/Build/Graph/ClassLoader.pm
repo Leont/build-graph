@@ -1,7 +1,9 @@
 package Build::Graph::ClassLoader;
 
-use Moo;
-with 'Build::Graph::Role::Loader';
+use strict;
+use warnings;
+
+use parent 'Build::Graph::Role::Loader';
 
 use Module::Runtime ();
 

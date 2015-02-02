@@ -1,13 +1,19 @@
 package Build::Graph::Role::Loader;
 
-use Moo::Role;
+use strict;
+use warnings;
 
-requires 'load';
+sub new {
+	my ($class, %args) = @_;
+	return bless {
+		graph => $args{graph} || Carp::croak(''),
+	}, $class;
+}
 
-has graph => (
-	is       => 'ro',
-	required => 1,
-);
+sub graph {
+	my $self = shift;
+	return $self->{graph};
+}
 
 sub to_hashref {
 	my $self = shift;
