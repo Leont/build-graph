@@ -1,11 +1,15 @@
 package Build::Graph::Node::File;
 use Moo;
 
-extends 'Build::Graph::Node::Phony';
-
-use Carp qw//;
 use File::Basename qw//;
 use File::Path qw//;
+
+has weak => (
+	is      => 'ro',
+	default => 0,
+);
+
+with 'Build::Graph::Role::Node';
 
 has need_dir_override => (
 	is        => 'rw',
@@ -17,7 +21,7 @@ around run => sub {
 	my ($orig, $self, $graph, $options) = @_;
 	my $filename = $self->name;
 
-	my @files = grep { $graph->get_node($_)->isa(__PACKAGE__) } sort $self->dependencies;
+	my @files = grep { $graph->get_node($_) && $graph->get_node($_)->phony || -e $_ } sort $self->dependencies;
 	
 	return if -e $filename and sub { -d $_ or -M $filename <= -M $_ or return 0 for @files; 1 }->();
 
@@ -34,8 +38,11 @@ around to_hashref => sub {
 	return {
 		%{ $self->$orig },
 		$self->_has_need_dir_override ? (need_dir => $self->need_dir_override) : (),
+		(weak => 1) x!! $self->weak,
 	};
 };
+
+sub phony { 0 }
 
 1;
 
