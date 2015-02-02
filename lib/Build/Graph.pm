@@ -1,6 +1,7 @@
 package Build::Graph;
 
-use Moo;
+use strict;
+use warnings;
 
 use Build::Graph::CommandSet;
 use Carp qw//;
@@ -9,85 +10,86 @@ use Module::Runtime qw//;
 use Build::Graph::Node::File;
 use Build::Graph::Node::Phony;
 
-has _nodes => (
-	is       => 'ro',
-	init_arg => 'nodes',
-	default  => sub { {} },
-	coerce   => sub {
-		my $nodes = shift;
-		for my $key (keys %{$nodes}) {
-			if (ref($nodes->{$key}) eq 'HASH') {
-				my $class = delete $nodes->{$key}{class};
-				$nodes->{$key} = $class->new(%{ $nodes->{$key} }, name => $key);
-			}
+sub new {
+	my $class = shift;
+	my %args = @_ == 1 ? %{ $_[0] } : @_;
+
+	return bless {
+		nodes        => $args{nodes} ? _coerce_nodes($args{nodes}) : {},
+		loader_class => $args{loader_class} || 'Build::Graph::ClassLoader',
+		loader_args  => $args{loader_args}  || {},
+		loader       => $args{loader},
+		commandset   => $args{commandset},
+		info_class   => $args{info_class}   || 'Build::Graph::Info',
+	}, $class;
+}
+
+sub _coerce_nodes {
+	my $nodes = shift;
+	for my $key (keys %{$nodes}) {
+		if (ref($nodes->{$key}) eq 'HASH') {
+			my $class = delete $nodes->{$key}{class};
+			$nodes->{$key} = $class->new(%{ $nodes->{$key} }, name => $key);
 		}
-		return $nodes;
-	},
-);
+	}
+	return $nodes;
+}
 
 sub get_node {
 	my ($self, $key) = @_;
-	return $self->_nodes->{$key};
+	return $self->{nodes}{$key};
 }
 
 sub add_file {
 	my ($self, $name, %args) = @_;
-	Carp::croak("File '$name' already exists in database") if !$args{override} && exists $self->_nodes->{$name};
+	Carp::croak("File '$name' already exists in database") if !$args{override} && exists $self->{nodes}{$name};
 	my $node = Build::Graph::Node::File->new(%args, name => $name);
-	$self->_nodes->{$name} = $node;
+	$self->{nodes}{$name} = $node;
 	return;
 }
 
 sub add_phony {
 	my ($self, $name, %args) = @_;
-	Carp::croak("Phony '$name' already exists in database") if !$args{override} && exists $self->_nodes->{$name};
+	Carp::croak("Phony '$name' already exists in database") if !$args{override} && exists $self->{nodes}{$name};
 	my $node = Build::Graph::Node::Phony->new(%args, name => $name);
-	$self->_nodes->{$name} = $node;
+	$self->{nodes}{$name} = $node;
 	return;
 }
 
-has loader_class => (
-	is => 'ro',
-	default => 'Build::Graph::ClassLoader',
-);
-
-has loader_args => (
-	is => 'ro',
-	default => sub { {} },
-);
-
-has loader => (
-	is => 'lazy',
-	default => sub {
-		my $self = shift;
-		my $class = $self->loader_class;
+sub loader {
+	my $self = shift;
+	return $self->{loader} ||= do {
+		my $class = $self->{loader_class};
 		Module::Runtime::require_module($class);
-		return $class->new(%{ $self->loader_args }, graph => $self);
-	},
-);
+		$class->new(%{ $self->{loader_args} }, graph => $self);
+	};
+}
 
-has commandset => (
-	is      => 'lazy',
-	default => sub {
-		my $self = shift;
-		return Build::Graph::CommandSet->new(loader => $self->loader);
-	},
-);
+sub commandset {
+	my $self = shift;
+	return $self->{commandset} ||= do {
+		Build::Graph::CommandSet->new(loader => $self->loader);
+	};
+}
 
-has info_class => (
-	is      => 'ro',
-	default => 'Build::Graph::Info',
-);
+sub info_class {
+	my $self = shift;
+	return $self->{info_class};
+}
 
 my $node_sorter;
 $node_sorter = sub {
 	my ($self, $current, $callback, $seen, $loop) = @_;
 	Carp::croak("$current has a circular dependency, aborting!\n") if exists $loop->{$current};
 	return if $seen->{$current}++;
-	my $node = $self->get_node($current) or Carp::croak("Node $current doesn't exist");
 	local $loop->{$current} = 1;
-	$self->$node_sorter($_, $callback, $seen, $loop) for $node->dependencies;
-	$callback->($current, $node);
+	if (my $node = $self->get_node($current)) {
+		$self->$node_sorter($_, $callback, $seen, $loop) for $node->dependencies;
+		$callback->($current, $node);
+	}
+	elsif (not -e $current) {
+		Carp::croak("Node $current doesn't exist");
+	}
 	return;
 };
 
@@ -109,7 +111,7 @@ sub to_hashref {
 	my $self = shift;
 	return {
 		commandset => $self->commandset->to_hashref,
-		loader     => $self->loader->to_hashref,
+		loader     => $self->{loader}->to_hashref,
 		nodes      => $self->_nodes_to_hashref,
 		info_class => $self->info_class,
 	};
@@ -117,7 +119,7 @@ sub to_hashref {
 
 sub _nodes_to_hashref {
 	my $self = shift;
-	my %ret = map { $_ => $self->get_node($_)->to_hashref } keys %{ $self->_nodes };
+	my %ret = map { $_ => $self->get_node($_)->to_hashref } keys %{ $self->{nodes} };
 	return \%ret;
 }
 
