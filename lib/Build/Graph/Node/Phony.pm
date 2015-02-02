@@ -1,8 +1,9 @@
 package Build::Graph::Node::Phony;
 
-use Moo;
+use strict;
+use warnings;
 
-with 'Build::Graph::Role::Node';
+use parent 'Build::Graph::Role::Node';
 
 sub phony { 1 }
 

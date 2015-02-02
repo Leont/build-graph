@@ -1,46 +1,50 @@
 package Build::Graph::Node::File;
-use Moo;
+
+use strict;
+use warnings;
 
 use File::Basename qw//;
 use File::Path qw//;
 
-has weak => (
-	is      => 'ro',
-	default => 0,
-);
+use parent 'Build::Graph::Role::Node';
 
-with 'Build::Graph::Role::Node';
+sub new {
+	my ($class, %args) = @_;
+	my $self = $class->SUPER::new(%args);
+	$self->{weak} = $args{weak} || 0,
+	$self->{needs_dir_override} = $args{needs_dir_override} if defined $args{needs_dir_override};
+	return $self;
+}
 
-has need_dir_override => (
-	is        => 'rw',
-	init_arg  => 'need_dir',
-	predicate => '_has_need_dir_override',
-);
+sub weak {
+	my $self = shift;
+	return $self->{weak};
+}
 
-around run => sub {
-	my ($orig, $self, $graph, $options) = @_;
+sub run {
+	my ($self, $graph, $options) = @_;
 	my $filename = $self->name;
 
 	my @files = grep { $graph->get_node($_) && $graph->get_node($_)->phony || -e $_ } sort $self->dependencies;
 	
 	return if -e $filename and sub { -d $_ or -M $filename <= -M $_ or return 0 for @files; 1 }->();
 
-	File::Path::mkpath(File::Basename::dirname($filename)) if $self->_has_need_dir_override ? $self->need_dir_override : 1;
+	File::Path::mkpath(File::Basename::dirname($filename)) if exists $self->{need_dir_override} ? $self->{need_dir_override} : 1;
 
-	$self->$orig($graph, $options);
+	$self->SUPER::run($graph, $options);
 
 	return;
-};
+}
 
-around to_hashref => sub {
-	my ($orig, $self) = @_;
+sub to_hashref {
+	my ($self) = @_;
 
 	return {
-		%{ $self->$orig },
-		$self->_has_need_dir_override ? (need_dir => $self->need_dir_override) : (),
+		%{ $self->SUPER::to_hashref },
+		exists $self->{need_dir_override} ? (need_dir => $self->{need_dir_override}) : (),
 		(weak => 1) x!! $self->weak,
 	};
-};
+}
 
 sub phony { 0 }
 

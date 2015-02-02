@@ -1,21 +1,30 @@
 package Build::Graph::Action;
-use Moo;
 
-has command => (
-	is       => 'ro',
-	required => 1,
-);
+use strict;
+use warnings;
 
-has arguments => (
-	is        => 'ro',
-	predicate => 'has_arguments',
-);
+sub new {
+	my ($class, %args) = @_;
+	return bless {
+		command => $args{command} || '',
+		(arguments => $args{arguments}) x!! defined $args{arguments},
+	}, $class;
+}
+
+sub command {
+	my $self = shift;
+	return $self->{command};
+}
+sub arguments {
+	my $self = shift;
+	return $self->{arguments};
+}
 
 sub to_hashref {
 	my $self = shift;
 	return {
-		command   => $self->command,
-		(arguments => $self->arguments) x!! $self->has_arguments,
+		command   => $self->{command},
+		(arguments => $self->{arguments}) x!! defined $self->{arguments},
 	};
 }
 

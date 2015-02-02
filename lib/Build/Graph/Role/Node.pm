@@ -1,30 +1,34 @@
 package Build::Graph::Role::Node;
 
-use Moo::Role;
+use strict;
+use warnings;
+
+use Carp ();
 
 use Build::Graph::Action;
 
-requires qw/phony weak/;
+sub new {
+	my ($class, %args) = @_;
+	return bless {
+		name         => $args{name} || Carp::croak('No name given'),
+		dependencies => $args{dependencies} || [],
+		actions      => $args{actions} ? _coerce_actions($args{actions}) : [],
+	}, $class;
+}
 
-has name => (
-	is       => 'ro',
-	required => 1,
-);
-
-has _dependencies => (
-	is       => 'ro',
-	default  => sub { [] },
-	init_arg => 'dependencies',
-);
+sub name {
+	my $self = shift;
+	return $self->{name};
+}
 
 sub dependencies {
 	my $self = shift;
-	return @{ $self->_dependencies };
+	return @{ $self->{dependencies} };
 }
 
 sub add_dependencies {
 	my ($self, @dependencies) = @_;
-	push @{ $self->_dependencies }, @dependencies;
+	push @{ $self->{dependencies} }, @dependencies;
 	return;
 }
 
@@ -37,31 +41,26 @@ my $from_hashref = sub {
 	return Build::Graph::Action->new(%{$value});
 };
 
-has _actions => (
-	is       => 'ro',
-	default  => sub { [] },
-	init_arg => 'actions',
-	coerce   => sub {
-		my $value = shift;
-		my $type  = ref $value;
-		if ($type eq 'Build::Graph::Action') {
-			return [$value];
-		}
-		elsif ($type eq 'ARRAY') {
-			return [ map { ref() ? $from_hashref->($_) : $from_string->($_) } @{$value} ];
-		}
-		elsif ($type eq 'HASH') {
-			return [ $from_hashref->($value) ];
-		}
-		elsif ($type eq '') {
-			return [ $from_string->($value) ];
-		}
-	},
-);
+sub _coerce_actions {
+	my $value = shift;
+	my $type  = ref $value;
+	if ($type eq 'Build::Graph::Action') {
+		return [$value];
+	}
+	elsif ($type eq 'ARRAY') {
+		return [ map { ref() ? $from_hashref->($_) : $from_string->($_) } @{$value} ];
+	}
+	elsif ($type eq 'HASH') {
+		return [ $from_hashref->($value) ];
+	}
+	elsif ($type eq '') {
+		return [ $from_string->($value) ];
+	}
+}
 
 sub actions {
 	my $self = shift;
-	return @{ $self->_actions };
+	return @{ $self->{actions} };
 }
 
 sub run {
