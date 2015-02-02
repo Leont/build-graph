@@ -4,7 +4,9 @@ use strict;
 use warnings FATAL => 'all';
 
 use Test::More;
-use Test::Differences;
+BEGIN {
+	*eq_or_diff = eval { require Test::Differences } ? \&Test::Differences::eq_or_diff : \&Test::More::is_deeply;
+}
 
 use File::Spec::Functions qw/catfile/;
 use File::Basename qw/dirname/;
@@ -34,7 +36,7 @@ $graph->add_phony('install', actions => 'basic/noop', dependencies => [ 'build' 
 
 my @sorted = $graph->_sort_nodes('build');
 
-is_deeply \@sorted, [ $source1_filename, $source2_filename, 'build' ], 'topological sort is ok';
+eq_or_diff(\@sorted, [ $source1_filename, $source2_filename, 'build' ], 'topological sort is ok');
 
 my @runs     = qw/build test install/;
 my %expected = (
