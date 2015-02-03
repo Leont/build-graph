@@ -39,8 +39,8 @@ sub add {
 }
 
 sub load {
-	my ($self, $provider) = @_;
-	$self->loader->load($provider)->configure_commands($self);
+	my ($self, $provider, @args) = @_;
+	$self->loader->load($provider, @args)->configure_commands($self, @args);
 	return;
 }
 

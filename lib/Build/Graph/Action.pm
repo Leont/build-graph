@@ -22,10 +22,10 @@ sub arguments {
 
 sub to_hashref {
 	my $self = shift;
-	return {
-		command   => $self->{command},
-		(arguments => $self->{arguments}) x!! defined $self->{arguments},
-	};
+	return [
+		$self->{command},
+		($self->{arguments}) x!! defined $self->{arguments},
+	];
 }
 
 1;

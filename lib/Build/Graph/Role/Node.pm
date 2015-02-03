@@ -36,26 +36,15 @@ my $from_string = sub {
 	my $value = shift;
 	return Build::Graph::Action->new(command => $value);
 };
-my $from_hashref = sub {
+my $from_array = sub {
 	my $value = shift;
-	return Build::Graph::Action->new(%{$value});
+	my ($command, $arguments) = @{$value};
+	return Build::Graph::Action->new(command => $command, arguments => $arguments);
 };
 
 sub _coerce_actions {
 	my $value = shift;
-	my $type  = ref $value;
-	if ($type eq 'Build::Graph::Action') {
-		return [$value];
-	}
-	elsif ($type eq 'ARRAY') {
-		return [ map { ref() ? $from_hashref->($_) : $from_string->($_) } @{$value} ];
-	}
-	elsif ($type eq 'HASH') {
-		return [ $from_hashref->($value) ];
-	}
-	elsif ($type eq '') {
-		return [ $from_string->($value) ];
-	}
+	return [ map { ref() ? $from_array->($_) : $from_string->($_) } @{$value} ];
 }
 
 sub actions {

@@ -25,43 +25,63 @@ END { rmtree $dirname if defined $dirname }
 $SIG{INT} = sub { rmtree $dirname; die "Interrupted!\n" };
 
 my $source1_filename = catfile($dirname, 'source1');
-$graph->add_file($source1_filename, actions => [ 'basic/poke', { command => 'basic/spew', arguments => 'Hello' } ]);
+$graph->add_file($source1_filename, actions => [ 'basic/poke', [ 'basic/spew', 'Hello' ] ]);
 
 my $source2_filename = catfile($dirname, 'source2');
-$graph->add_file($source2_filename, actions => { command => 'basic/spew', arguments => 'World' }, dependencies => [ $source1_filename ]);
+$graph->add_file($source2_filename, actions => [ [ 'basic/spew', 'World' ] ], dependencies => [ $source1_filename ]);
 
-$graph->add_phony('build', actions => 'basic/noop', dependencies => [ $source1_filename, $source2_filename ]);
-$graph->add_phony('test', actions => 'basic/noop', dependencies => [ 'build' ]);
-$graph->add_phony('install', actions => 'basic/noop', dependencies => [ 'build' ]);
+my $wildcard = $graph->add_wildcard(dir => $dirname, pattern => '*.foo');
+$graph->add_subst($wildcard, subst => sub { (my $target = $_[0]) =~ s/\.foo/.bar/; return $target }, actions => sub {
+	my ($target, $source) = @_;
+	return [ [ 'basic/spew', $source ] ];
+});
+
+my $source3_foo = catfile($dirname, 'source3.foo');
+$graph->add_file($source3_foo, actions => [ [ 'basic/spew', 'foo' ]]);
+my $source3_bar = catfile($dirname, 'source3.bar');
+
+$graph->add_phony('build', actions => [[ 'basic/noop' ]], dependencies => [ $source1_filename, $source2_filename, $source3_bar ]);
+$graph->add_phony('test', actions => [[ 'basic/noop' ]], dependencies => [ 'build' ]);
+$graph->add_phony('install', actions => [[ 'basic/noop' ]], dependencies => [ 'build' ]);
 
 my @sorted = $graph->_sort_nodes('build');
 
-eq_or_diff(\@sorted, [ $source1_filename, $source2_filename, 'build' ], 'topological sort is ok');
+my @full = ($source1_filename, $source2_filename, $source3_foo, $source3_bar, 'build');
+
+eq_or_diff(\@sorted, \@full, 'topological sort is ok');
 
 my @runs     = qw/build test install/;
 my %expected = (
 	build => [
-		[qw{poke _testing/source1 _testing/source2 build}],
+		[ 'poke', @full ],
 		[qw/build/],
 
 		sub { rmtree $dirname },
-		[qw{poke _testing/source1 _testing/source2 build}],
+		[ 'poke', @full ],
 		[qw/build/],
 
 		sub { unlink $source2_filename or die "Couldn't remove $source2_filename: $!" },
 		[qw{_testing/source2 build}],
 		[qw/build/],
 
+		sub { unlink $source3_foo; sleep 1 },
+		[ $source3_foo, $source3_bar, 'build' ],
+		[ 'build' ],
+
+		sub { unlink $source3_bar },
+		[ $source3_bar, 'build' ],
+		[ 'build' ],
+
 		sub { unlink $source1_filename; sleep 1; },
 		[qw{poke _testing/source1 _testing/source2 build}],
 		[qw/build/],
 	],
 	test    => [
-		[qw{poke _testing/source1 _testing/source2 build test}],
+		[ 'poke', @full, 'test' ],
 		[qw/build test/],
 	],
 	install => [
-		[qw{poke _testing/source1 _testing/source2 build install}],
+		[ 'poke', @full, 'install' ],
 		[qw/build install/],
 	],
 );

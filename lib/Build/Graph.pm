@@ -20,6 +20,8 @@ sub new {
 		loader       => $args{loader},
 		commandset   => $args{commandset},
 		info_class   => $args{info_class}   || 'Build::Graph::Info',
+		wildcards    => $args{wildcards}    || [],
+		named        => $args{named}        || {},
 	}, $class;
 }
 
@@ -44,7 +46,8 @@ sub add_file {
 	Carp::croak("File '$name' already exists in database") if !$args{override} && exists $self->{nodes}{$name};
 	my $node = Build::Graph::Node::File->new(%args, name => $name);
 	$self->{nodes}{$name} = $node;
-	return;
+	$self->match($name);
+	return $name;
 }
 
 sub add_phony {
@@ -52,7 +55,54 @@ sub add_phony {
 	Carp::croak("Phony '$name' already exists in database") if !$args{override} && exists $self->{nodes}{$name};
 	my $node = Build::Graph::Node::Phony->new(%args, name => $name);
 	$self->{nodes}{$name} = $node;
+	$self->match($name);
+	return $name;
+}
+
+sub add_wildcard {
+	my ($self, %args) = @_;
+	if (!$args{matcher} && $args{pattern}) {
+		my $pattern = delete $args{pattern};
+		if (ref($pattern) ne 'Regexp') {
+			require Text::Glob;
+			$pattern = Text::Glob::glob_to_regex($pattern);
+		}
+		$args{matcher} = sub {
+			my $filename = shift;
+			require File::Basename;
+			return File::Basename::basename($filename) =~ $pattern;
+		};
+	}
+	require Build::Graph::Wildcard;
+	my $wildcard = Build::Graph::Wildcard->new(%args);
+	push @{ $self->{wildcards} }, $wildcard;
+	$wildcard->match($_) for grep { !$self->{nodes}{$_}->phony } keys %{ $self->{nodes} };
+	$wildcard->on_file(sub { my $filename = shift; push @{ $self->{named}{ $args{name} } }, $filename }) if $args{name};
+	return $wildcard;
+}
+
+sub get_named {
+	my ($self, $name) = @_;
+	return @{ $self->{named}{$name} };
+}
+
+sub match {
+	my ($self, @names) = @_;
+	for my $name (@names) {
+		for my $wildcard (@{ $self->{wildcards} }) {
+			$wildcard->match($name);
+		}
+	}
 	return;
+}
+
+sub add_subst {
+	my ($self, $wildcard, %args) = @_;
+	require Build::Graph::Subst;
+	my $sub = Build::Graph::Subst->new(%args, graph => $self);
+	$wildcard->on_file(sub { my $filename = shift; $sub->process($filename) });
+	$self->{named}{ $args{name} } = $wildcard if $args{name};
+	return $sub;
 }
 
 sub loader {
@@ -114,6 +164,7 @@ sub to_hashref {
 		loader     => $self->{loader}->to_hashref,
 		nodes      => $self->_nodes_to_hashref,
 		info_class => $self->info_class,
+		named      => $self->{named},
 	};
 }
 
@@ -131,6 +182,7 @@ sub load {
 		loader_args  => $hashref->{loader},
 		nodes        => $hashref->{nodes},
 		info_class   => $hashref->{info_class},
+		named        => $hashref->{named},
 	);
 	for my $module (values %{ $hashref->{commandset} }) {
 		$ret->commandset->load($module->{module});
