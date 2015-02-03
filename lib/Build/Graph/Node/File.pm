@@ -3,9 +3,6 @@ package Build::Graph::Node::File;
 use strict;
 use warnings;
 
-use File::Basename qw//;
-use File::Path qw//;
-
 use parent 'Build::Graph::Role::Node';
 
 sub new {
@@ -29,7 +26,11 @@ sub run {
 	
 	return if -e $filename and sub { -d $_ or -M $filename <= -M $_ or return 0 for @files; 1 }->();
 
-	File::Path::mkpath(File::Basename::dirname($filename)) if exists $self->{need_dir_override} ? $self->{need_dir_override} : 1;
+	if (exists $self->{need_dir_override} ? $self->{need_dir_override} : 1) {
+		require File::Path;
+		require File::Basename;
+		File::Path::mkpath(File::Basename::dirname($filename));
+	}
 
 	$self->SUPER::run($graph, $options);
 

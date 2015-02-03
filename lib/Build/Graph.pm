@@ -3,7 +3,6 @@ package Build::Graph;
 use strict;
 use warnings;
 
-use Build::Graph::CommandSet;
 use Carp qw//;
 use Module::Runtime qw//;
 
@@ -68,6 +67,7 @@ sub loader {
 sub commandset {
 	my $self = shift;
 	return $self->{commandset} ||= do {
+		require Build::Graph::CommandSet;
 		Build::Graph::CommandSet->new(loader => $self->loader);
 	};
 }
