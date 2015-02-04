@@ -10,7 +10,7 @@ use Build::Graph::Action;
 sub new {
 	my ($class, %args) = @_;
 	return bless {
-		name         => $args{name} || Carp::croak('No name given'),
+		name         => $args{name}         || Carp::croak('No name given'),
 		dependencies => $args{dependencies} || [],
 		$args{action} ? (action => _coerce_action($args{action})) : (),
 	}, $class;
@@ -54,12 +54,12 @@ sub run {
 }
 
 sub to_hashref {
-	my $self = shift;
+	my $self         = shift;
 	my @dependencies = $self->dependencies;
-	my $action = $self->action;
-	my %ret = (class => ref $self);
-	$ret{dependencies} = \@dependencies if @dependencies;
-	$ret{action} = $action->to_hashref if $action;
+	my $action       = $self->action;
+	my %ret          = (class => ref $self);
+	$ret{dependencies} = \@dependencies      if @dependencies;
+	$ret{action}       = $action->to_hashref if $action;
 	return \%ret;
 }
 

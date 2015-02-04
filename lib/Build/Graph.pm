@@ -176,7 +176,7 @@ sub _nodes_to_hashref {
 sub load {
 	my ($self, $hashref) = @_;
 	my $loader_class = delete $hashref->{loader}{module};
-	my $ret = Build::Graph->new(
+	my $ret          = Build::Graph->new(
 		loader_class => $loader_class,
 		loader_args  => $hashref->{loader},
 		nodes        => $hashref->{nodes},
