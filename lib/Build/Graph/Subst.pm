@@ -12,7 +12,7 @@ sub new {
 	my $self = $class->SUPER::new(%args);
 	$self->{graph}        =  $args{graph},
 	$self->{subst}        =  $args{subst} || Carp::croak('No subst given'),
-	$self->{actions}      =  $args{actions} || Carp::croak('No actions given'),
+	$self->{action}       =  $args{action} || Carp::croak('No action given'),
 	$self->{dependencies} =  $args{dependencies} || [],
 	$self->{dependents}   =  $args{dependents},
 	return $self;
@@ -21,8 +21,8 @@ sub new {
 sub process {
 	my ($self, $source) = @_;
 	my $target = $self->{subst}->($source);
-	my $action = $self->{actions}->($target, $source);
-	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} } ], actions => $action);
+	my $action = $self->{action}->($target, $source);
+	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} } ], action => $action);
 	if ($self->{dependents}) {
 		my @dependents = ref $self->{dependents} ? @{ $self->{dependents} } : $self->{dependents};
 		for my $dependent (@dependents) {

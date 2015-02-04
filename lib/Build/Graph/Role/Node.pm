@@ -12,7 +12,7 @@ sub new {
 	return bless {
 		name         => $args{name} || Carp::croak('No name given'),
 		dependencies => $args{dependencies} || [],
-		actions      => $args{actions} ? _coerce_actions($args{actions}) : [],
+		$args{action} ? (action => _coerce_action($args{action})) : (),
 	}, $class;
 }
 
@@ -32,45 +32,35 @@ sub add_dependencies {
 	return;
 }
 
-my $from_string = sub {
-	my $value = shift;
-	return Build::Graph::Action->new(command => $value);
-};
-my $from_array = sub {
+sub _coerce_action {
 	my $value = shift;
 	my ($command, $arguments) = @{$value};
 	return Build::Graph::Action->new(command => $command, arguments => $arguments);
-};
-
-sub _coerce_actions {
-	my $value = shift;
-	return [ map { ref() ? $from_array->($_) : $from_string->($_) } @{$value} ];
 }
 
-sub actions {
+sub action {
 	my $self = shift;
-	return @{ $self->{actions} };
+	return $self->{action};
 }
 
 sub run {
 	my ($self, $graph, $options) = @_;
-	for my $action ($self->actions) {
-		my $command = $action->command;
-		my $callback = $graph->commandset->get($command) or Carp::croak("Command $command doesn't exist");
-		$callback->($graph->info_class->new(%{$options}, name => $self->name, arguments => $action->arguments, graph => $graph, node => $self));
-	}
+	my $action = $self->action;
+	return if not $action;
+	my $command = $action->command;
+	my $callback = $graph->commandset->get($command) or Carp::croak("Command $command doesn't exist");
+	$callback->($graph->info_class->new(%{$options}, name => $self->name, arguments => $action->arguments, graph => $graph, node => $self));
 	return;
 }
 
 sub to_hashref {
 	my $self = shift;
 	my @dependencies = $self->dependencies;
-	my @actions = map { $_->to_hashref } $self->actions;
-	return {
-		(dependencies => \@dependencies) x !!@dependencies,
-		(actions      => \@actions) x !!@actions,
-		class        => ref($self),
-	};
+	my $action = $self->action;
+	my %ret = (class => ref $self);
+	$ret{dependencies} = \@dependencies if @dependencies;
+	$ret{action} = $action->to_hashref if $action;
+	return \%ret;
 }
 
 1;
