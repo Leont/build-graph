@@ -8,14 +8,8 @@ use parent 'Build::Graph::Role::Node';
 sub new {
 	my ($class, %args) = @_;
 	my $self = $class->SUPER::new(%args);
-	$self->{weak} = $args{weak} || 0,
 	$self->{needs_dir_override} = $args{needs_dir_override} if defined $args{needs_dir_override};
 	return $self;
-}
-
-sub weak {
-	my $self = shift;
-	return $self->{weak};
 }
 
 sub run {
@@ -43,7 +37,6 @@ sub to_hashref {
 	return {
 		%{ $self->SUPER::to_hashref },
 		exists $self->{need_dir_override} ? (need_dir => $self->{need_dir_override}) : (),
-		(weak => 1) x!! $self->weak,
 	};
 }
 
