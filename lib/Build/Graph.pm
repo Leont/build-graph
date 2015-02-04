@@ -10,8 +10,7 @@ use Build::Graph::Node::File;
 use Build::Graph::Node::Phony;
 
 sub new {
-	my $class = shift;
-	my %args = @_ == 1 ? %{ $_[0] } : @_;
+	my ($class, %args) = @_;
 
 	return bless {
 		nodes        => $args{nodes} ? _coerce_nodes($args{nodes}) : {},

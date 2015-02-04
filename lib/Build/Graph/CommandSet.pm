@@ -8,9 +8,7 @@ use Carp ();
 use Build::Graph::Group;
 
 sub new {
-	my $class = shift;
-
-	my %args = @_ == 1 ? %{ $_[0] } : @_;
+	my ($class, %args) = @_;
 	return bless {
 		groups => $args{groups},
 		loader => $args{loader} || Carp::croak('No loader given'),
