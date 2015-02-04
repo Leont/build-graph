@@ -5,7 +5,7 @@ use warnings;
 
 use parent 'Build::Graph::Role::Node';
 
-sub phony { 1 }
+use constant phony => 1;
 
 1;
 

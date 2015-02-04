@@ -16,9 +16,9 @@ sub run {
 	my ($self, $graph, $options) = @_;
 	my $filename = $self->name;
 
-	my @files = grep { $graph->get_node($_) && $graph->get_node($_)->phony || -e $_ } sort $self->dependencies;
+	my @files = grep { $graph->get_node($_) && $graph->get_node($_)->phony || -e } sort $self->dependencies;
 	
-	return if -e $filename and sub { -d $_ or -M $filename <= -M $_ or return 0 for @files; 1 }->();
+	return if -e $filename and sub { -d or -M $filename <= -M or return 0 for @files; 1 }->();
 
 	if (exists $self->{need_dir_override} ? $self->{need_dir_override} : 1) {
 		require File::Path;
@@ -40,7 +40,7 @@ sub to_hashref {
 	};
 }
 
-sub phony { 0 }
+use constant phony => 0;
 
 1;
 
