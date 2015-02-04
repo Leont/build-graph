@@ -8,11 +8,11 @@ use parent 'Build::Graph::Role::CommandProvider';
 use Carp qw/croak/;
 
 sub configure_commands {
-	my ($self, $command_set) = @_;
+	my ($self, $command_set, $next_is) = @_;
 	$command_set->add('basic', module => 'Core', commands => {
-		'spew' => sub { my $info = shift; ::next_is($info->name); spew($info->name, $info->arguments) },
-		'poke' => sub { ::next_is('poke') },
-		'noop' => sub { ::next_is($_[0]->name) },
+		'spew' => sub { my $info = shift; $next_is->($info->name); spew($info->name, $info->arguments) },
+		'poke' => sub { $next_is->('poke') },
+		'noop' => sub { $next_is->($_[0]->name) },
 	});
 }
 
