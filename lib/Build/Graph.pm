@@ -40,6 +40,14 @@ sub get_node {
 	return $self->{nodes}{$key};
 }
 
+sub unalias {
+	my ($self, $key) = @_;
+	if ($key =~ /\A \$\( ([\w.-]+)  \) /xms) {
+		return @{ $self->{named}{$1} }
+	}
+	return $key;
+}
+
 sub add_file {
 	my ($self, $name, %args) = @_;
 	Carp::croak("File '$name' already exists in database") if !$args{override} && exists $self->{nodes}{$name};
@@ -99,8 +107,11 @@ sub add_subst {
 	my ($self, $wildcard, %args) = @_;
 	require Build::Graph::Subst;
 	my $sub = Build::Graph::Subst->new(%args, graph => $self);
-	$wildcard->on_file(sub { my $filename = shift; $sub->process($filename) });
-	$self->{named}{ $args{name} } = $wildcard if $args{name};
+	$wildcard->on_file(sub {
+		my $source = shift;
+		my $target = $sub->process($source);
+		push @{ $self->{named}{ $args{name} } }, $target if $args{name};
+	});
 	return $sub;
 }
 
@@ -133,7 +144,7 @@ $node_sorter = sub {
 	return if $seen->{$current}++;
 	local $loop->{$current} = 1;
 	if (my $node = $self->get_node($current)) {
-		$self->$node_sorter($_, $callback, $seen, $loop) for $node->dependencies;
+		$self->$node_sorter($_, $callback, $seen, $loop) for map { $self->unalias($_) } $node->dependencies;
 		$callback->($current, $node);
 	}
 	elsif (not -e $current) {

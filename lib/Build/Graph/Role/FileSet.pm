@@ -9,7 +9,6 @@ sub new {
 #		graph        => $args{graph},
 		files        => {},
 		substs       => [],
-#		dependents   => $args{dependents},
 	}, $class;
 }
 

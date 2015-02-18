@@ -14,7 +14,6 @@ sub new {
 	$self->{subst}        = $args{subst} || Carp::croak('No subst given');
 	$self->{action}       = $args{action} || Carp::croak('No action given');
 	$self->{dependencies} = $args{dependencies} || [];
-	$self->{dependents}   = $args{dependents};
 	return $self;
 }
 
@@ -23,12 +22,6 @@ sub process {
 	my $target = $self->{subst}->($source);
 	my $action = $self->{action}->($target, $source);
 	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} } ], action => $action);
-	if ($self->{dependents}) {
-		my @dependents = ref $self->{dependents} ? @{ $self->{dependents} } : $self->{dependents};
-		for my $dependent (@dependents) {
-			$self->{graph}->get_node($dependent)->add_dependencies($target);
-		}
-	}
 	my @subst = map { $_->process($target) } @{ $self->{substs} };
 	push @{ $self->{files}{$target} }, @subst;
 	return $target;
