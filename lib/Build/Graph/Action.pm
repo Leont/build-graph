@@ -7,7 +7,7 @@ sub new {
 	my ($class, %args) = @_;
 	return bless {
 		command => $args{command} || '',
-		(arguments => $args{arguments}) x!! defined $args{arguments},
+		arguments => $args{arguments} || [],
 	}, $class;
 }
 
@@ -24,7 +24,7 @@ sub to_hashref {
 	my $self = shift;
 	return [
 		$self->{command},
-		($self->{arguments}) x!! defined $self->{arguments},
+		@{ $self->{arguments} },
 	];
 }
 

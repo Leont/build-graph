@@ -34,8 +34,8 @@ sub add_dependencies {
 
 sub _coerce_action {
 	my $value = shift;
-	my ($command, $arguments) = @{$value};
-	return Build::Graph::Action->new(command => $command, arguments => $arguments);
+	my ($command, @arguments) = @{$value};
+	return Build::Graph::Action->new(command => $command, arguments => [ @arguments ]);
 }
 
 sub action {

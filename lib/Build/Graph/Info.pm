@@ -15,12 +15,17 @@ sub new {
 	}, $class;
 }
 
-for my $attr (qw/name arguments node graph/) {
+for my $attr (qw/name node graph/) {
 	no strict 'refs';
 	*{$attr} = sub {
 		my $self = shift;
 		return $self->{$attr};
 	};
+}
+
+sub arguments {
+	my $self = shift;
+	return @{ $self->{arguments} };
 }
 
 1;
