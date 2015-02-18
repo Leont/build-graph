@@ -15,9 +15,10 @@ sub command {
 	my $self = shift;
 	return $self->{command};
 }
+
 sub arguments {
 	my $self = shift;
-	return $self->{arguments};
+	return @{ $self->{arguments} };
 }
 
 sub to_hashref {

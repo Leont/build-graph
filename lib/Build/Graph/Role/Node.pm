@@ -49,7 +49,8 @@ sub run {
 	return if not $action;
 	my $command = $action->command;
 	my $callback = $graph->commandset->get($command) or Carp::croak("Command $command doesn't exist");
-	$callback->($graph->info_class->new(%{$options}, name => $self->name, arguments => $action->arguments, graph => $graph, node => $self));
+	my @arguments = $graph->expand($action->arguments);
+	$callback->($graph->info_class->new(%{$options}, name => $self->name, arguments => \@arguments, graph => $graph, node => $self));
 	return;
 }
 

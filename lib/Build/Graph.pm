@@ -40,12 +40,9 @@ sub get_node {
 	return $self->{nodes}{$key};
 }
 
-sub unalias {
-	my ($self, $key) = @_;
-	if ($key =~ /\A \$\( ([\w.-]+)  \) /xms) {
-		return @{ $self->{named}{$1} }
-	}
-	return $key;
+sub expand {
+	my ($self, @keys) = @_;
+	return map { /\A \$\( ([\w.-]+)  \) \z /xms ? @{ $self->{named}{$1} } : $_ } @keys;
 }
 
 sub add_file {
@@ -144,7 +141,7 @@ $node_sorter = sub {
 	return if $seen->{$current}++;
 	local $loop->{$current} = 1;
 	if (my $node = $self->get_node($current)) {
-		$self->$node_sorter($_, $callback, $seen, $loop) for map { $self->unalias($_) } $node->dependencies;
+		$self->$node_sorter($_, $callback, $seen, $loop) for $self->expand($node->dependencies);
 		$callback->($current, $node);
 	}
 	elsif (not -e $current) {
