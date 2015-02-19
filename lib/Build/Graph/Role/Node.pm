@@ -4,14 +4,18 @@ use strict;
 use warnings;
 
 use Carp ();
+use Scalar::Util ();
 
 sub new {
 	my ($class, %args) = @_;
-	return bless {
+	my $ret = bless {
+		graph        => $args{graph}        || Carp::croak('No graph given'),
 		name         => $args{name}         || Carp::croak('No name given'),
 		dependencies => $args{dependencies} || [],
 		action       => $args{action},
 	}, $class;
+	Scalar::Util::weaken($ret->{graph});
+	return $ret;
 }
 
 sub name {
@@ -31,16 +35,17 @@ sub add_dependencies {
 }
 
 sub action {
-	my $self = shift;
-	return @{ $self->{action} };
+	my ($self) = @_;
+	my ($command, @raw_args) = @{ $self->{action} || [] } or return;
+	my $callback = $self->{graph}->commandset->get($command) or Carp::croak("Command $command doesn't exist");
+	my @arguments = $self->{graph}->expand(@raw_args);
+	return ($callback, @arguments);
 }
 
 sub run {
-	my ($self, $graph, $options) = @_;
-	return if not $self->{action};
-	my ($command, @raw_args) = @{ $self->{action} };
-	my $callback = $graph->commandset->get($command) or Carp::croak("Command $command doesn't exist");
-	my @arguments = $graph->expand(@raw_args);
+	my ($self, $options) = @_;
+	my ($callback, @arguments) = $self->action or return;
+	my $graph = $self->{graph};
 	$callback->($graph->info_class->new(%{$options}, name => $self->name, arguments => \@arguments, graph => $graph, node => $self));
 	return;
 }

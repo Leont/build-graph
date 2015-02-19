@@ -13,9 +13,10 @@ sub new {
 }
 
 sub run {
-	my ($self, $graph, $options) = @_;
+	my ($self, $options) = @_;
 	my $filename = $self->name;
 
+	my $graph = $self->{graph};
 	my @files = grep { $graph->get_node($_) && $graph->get_node($_)->phony || -e } sort $graph->expand($self->dependencies);
 	
 	return if -e $filename and sub { -d or -M $filename <= -M or return 0 for @files; 1 }->();
@@ -26,7 +27,7 @@ sub run {
 		File::Path::mkpath(File::Basename::dirname($filename));
 	}
 
-	$self->SUPER::run($graph, $options);
+	$self->SUPER::run($options);
 
 	return;
 }

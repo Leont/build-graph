@@ -37,7 +37,7 @@ sub expand {
 sub add_file {
 	my ($self, $name, %args) = @_;
 	Carp::croak("File '$name' already exists in database") if !$args{override} && exists $self->{nodes}{$name};
-	my $node = Build::Graph::Node::File->new(%args, name => $name);
+	my $node = Build::Graph::Node::File->new(%args, name => $name, graph => $self);
 	$self->{nodes}{$name} = $node;
 	$self->match($name);
 	return $name;
@@ -46,7 +46,7 @@ sub add_file {
 sub add_phony {
 	my ($self, $name, %args) = @_;
 	Carp::croak("Phony '$name' already exists in database") if !$args{override} && exists $self->{nodes}{$name};
-	my $node = Build::Graph::Node::Phony->new(%args, name => $name);
+	my $node = Build::Graph::Node::Phony->new(%args, name => $name, graph => $self);
 	$self->{nodes}{$name} = $node;
 	$self->match($name);
 	return $name;
@@ -142,7 +142,7 @@ $node_sorter = sub {
 sub run {
 	my ($self, $startpoint, %options) = @_;
 	Module::Runtime::require_module($self->info_class);
-	$self->$node_sorter($startpoint, sub { $_[1]->run($self, \%options) }, {}, {});
+	$self->$node_sorter($startpoint, sub { $_[1]->run(\%options) }, {}, {});
 	return;
 }
 
@@ -171,13 +171,12 @@ sub _nodes_to_hashref {
 }
 
 sub _load_nodes {
-	my $nodes = shift;
-	my %ret;
+	my ($self, $nodes) = @_;
 	for my $key (keys %{$nodes}) {
 		my $class = delete $nodes->{$key}{class};
-		$ret{$key} = $class->new(%{ $nodes->{$key} }, name => $key);
+		$self->{nodes}{$key} = $class->new(%{ $nodes->{$key} }, name => $key, graph => $self);
 	}
-	return \%ret;
+	return;
 }
 
 sub load {
@@ -186,10 +185,10 @@ sub load {
 	my $ret          = Build::Graph->new(
 		loader_class => $loader_class,
 		loader_args  => $hashref->{loader},
-		nodes        => _load_nodes($hashref->{nodes}),
 		info_class   => $hashref->{info_class},
 		named        => $hashref->{named},
 	);
+	$ret->_load_nodes($hashref->{nodes});
 	for my $module (values %{ $hashref->{commandset} }) {
 		$ret->commandset->load($module->{module});
 	}
