@@ -45,8 +45,7 @@ sub action {
 sub run {
 	my ($self, $options) = @_;
 	my ($callback, @arguments) = $self->action or return;
-	my $graph = $self->{graph};
-	$callback->($graph->info_class->new(%{$options}, name => $self->name, arguments => \@arguments, graph => $graph, node => $self));
+	$callback->($self->{graph}->info_class->new(%{$options}, name => $self->name, arguments => \@arguments));
 	return;
 }
 
