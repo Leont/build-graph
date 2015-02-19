@@ -5,8 +5,6 @@ use warnings;
 
 use Carp ();
 
-use Build::Graph::Group;
-
 sub new {
 	my ($class, %args) = @_;
 	return bless {
@@ -24,15 +22,12 @@ sub get {
 	my ($self, $key) = @_;
 	my ($groupname, $command) = split m{/}, $key, 2;
 	my $group = $self->{groups}{$groupname};
-	return $group->get($command) if $group;
-	return;
+	return $group ? $group->{commands}{$command} : ();
 }
 
 sub add {
 	my ($self, $name, %args) = @_;
-	$args{elements} = delete $args{commands};
-	my $command = Build::Graph::Group->new(%args);
-	$self->{groups}{$name} = $command;
+	%{ $self->{groups}{$name} } = %args;
 	return;
 }
 
@@ -44,15 +39,14 @@ sub load {
 
 sub all_for_group {
 	my ($self, $groupname) = @_;
-	return $self->{groups}{$groupname}->all;
+	return keys %{ $self->{groups}{$groupname}{commands} };
 }
 
 sub to_hashref {
 	my $self = shift;
 	my %ret;
 	for my $name (keys %{ $self->{groups} }) {
-		my $group = $self->{groups}{$name};
-		$ret{$name} = { module => $group->module };
+		$ret{$name} = { module => $self->{groups}{$name}{module} };
 	}
 	return \%ret;
 }
