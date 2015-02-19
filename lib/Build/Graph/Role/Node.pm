@@ -5,14 +5,12 @@ use warnings;
 
 use Carp ();
 
-use Build::Graph::Action;
-
 sub new {
 	my ($class, %args) = @_;
 	return bless {
 		name         => $args{name}         || Carp::croak('No name given'),
 		dependencies => $args{dependencies} || [],
-		$args{action} ? (action => _coerce_action($args{action})) : (),
+		action       => $args{action},
 	}, $class;
 }
 
@@ -32,24 +30,17 @@ sub add_dependencies {
 	return;
 }
 
-sub _coerce_action {
-	my $value = shift;
-	my ($command, @arguments) = @{$value};
-	return Build::Graph::Action->new(command => $command, arguments => [ @arguments ]);
-}
-
 sub action {
 	my $self = shift;
-	return $self->{action};
+	return @{ $self->{action} };
 }
 
 sub run {
 	my ($self, $graph, $options) = @_;
-	my $action = $self->action;
-	return if not $action;
-	my $command = $action->command;
+	return if not $self->{action};
+	my ($command, @raw_args) = @{ $self->{action} };
 	my $callback = $graph->commandset->get($command) or Carp::croak("Command $command doesn't exist");
-	my @arguments = $graph->expand($action->arguments);
+	my @arguments = $graph->expand(@raw_args);
 	$callback->($graph->info_class->new(%{$options}, name => $self->name, arguments => \@arguments, graph => $graph, node => $self));
 	return;
 }
@@ -57,10 +48,9 @@ sub run {
 sub to_hashref {
 	my $self         = shift;
 	my @dependencies = $self->dependencies;
-	my $action       = $self->action;
 	my %ret          = (class => ref $self);
-	$ret{dependencies} = \@dependencies      if @dependencies;
-	$ret{action}       = $action->to_hashref if $action;
+	$ret{dependencies} = \@dependencies  if @dependencies;
+	$ret{action}       = $self->{action} if $self->{action};
 	return \%ret;
 }
 
