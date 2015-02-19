@@ -13,7 +13,7 @@ sub new {
 	my ($class, %args) = @_;
 
 	return bless {
-		nodes        => $args{nodes} ? _coerce_nodes($args{nodes}) : {},
+		nodes        => $args{nodes}        || {},
 		loader_class => $args{loader_class} || 'Build::Graph::ClassLoader',
 		loader_args  => $args{loader_args}  || {},
 		loader       => $args{loader},
@@ -22,17 +22,6 @@ sub new {
 		wildcards    => $args{wildcards}    || [],
 		named        => $args{named}        || {},
 	}, $class;
-}
-
-sub _coerce_nodes {
-	my $nodes = shift;
-	for my $key (keys %{$nodes}) {
-		if (ref($nodes->{$key}) eq 'HASH') {
-			my $class = delete $nodes->{$key}{class};
-			$nodes->{$key} = $class->new(%{ $nodes->{$key} }, name => $key);
-		}
-	}
-	return $nodes;
 }
 
 sub get_node {
@@ -181,13 +170,23 @@ sub _nodes_to_hashref {
 	return \%ret;
 }
 
+sub _load_nodes {
+	my $nodes = shift;
+	my %ret;
+	for my $key (keys %{$nodes}) {
+		my $class = delete $nodes->{$key}{class};
+		$ret{$key} = $class->new(%{ $nodes->{$key} }, name => $key);
+	}
+	return \%ret;
+}
+
 sub load {
 	my ($self, $hashref) = @_;
 	my $loader_class = delete $hashref->{loader}{module};
 	my $ret          = Build::Graph->new(
 		loader_class => $loader_class,
 		loader_args  => $hashref->{loader},
-		nodes        => $hashref->{nodes},
+		nodes        => _load_nodes($hashref->{nodes}),
 		info_class   => $hashref->{info_class},
 		named        => $hashref->{named},
 	);
