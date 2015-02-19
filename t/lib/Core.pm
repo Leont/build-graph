@@ -7,6 +7,9 @@ use parent 'Build::Graph::Role::CommandProvider';
 
 use Carp qw/croak/;
 
+use File::Path 'mkpath';
+use File::Basename 'dirname';
+
 sub configure_commands {
 	my ($self, $command_set, $next_is) = @_;
 	$command_set->add('basic', module => 'Core', commands => {
@@ -18,6 +21,7 @@ sub configure_commands {
 
 sub spew {
 	my ($filename, $content) = @_;
+	mkpath(dirname($filename));
 	open my $fh, '>', $filename or croak "Couldn't open file '$filename' for writing: $!\n";
 	print $fh $content;
 	close $fh or croak "couldn't close $filename: $!\n";
