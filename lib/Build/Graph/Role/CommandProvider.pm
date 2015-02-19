@@ -3,8 +3,6 @@ package Build::Graph::Role::CommandProvider;
 use strict;
 use warnings;
 
-use parent 'Build::Graph::Role::Dependent';
-
 sub configure_commands;
 
 sub dependencies {
