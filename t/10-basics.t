@@ -17,7 +17,7 @@ use Build::Graph;
 use lib 't/lib';
 
 my $graph = Build::Graph->new;
-$graph->load_plugin(basic => 'Core', next_is => \&next_is);
+$graph->load_plugin(basic => 'Basic', next_is => \&next_is);
 
 my $dirname = '_testing';
 END { rmtree $dirname if defined $dirname }
