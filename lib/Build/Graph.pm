@@ -189,8 +189,8 @@ sub load {
 		named        => $hashref->{named},
 	);
 	$ret->_load_nodes($hashref->{nodes});
-	for my $name (keys %{ $hashref->{plugins} }) {
-		$ret->load_plugin($name, $hashref->{plugins}{$name}{module});
+	for my $plugin (@{ $hashref->{plugins} }) {
+		$ret->load_plugin($plugin->{name}, $plugin->{module});
 	}
 	return $ret;
 }

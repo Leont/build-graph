@@ -27,11 +27,11 @@ sub add_plugin {
 
 sub to_hashref {
 	my $self = shift;
-	my %ret;
-	for my $name (keys %{ $self->{groups} }) {
-		$ret{$name} = $self->{groups}{$name}->serialize;
+	my @ret;
+	for my $plugin (values %{ $self->{groups} }) {
+		push @ret, $plugin->serialize;
 	}
-	return \%ret;
+	return \@ret;
 }
 
 1;

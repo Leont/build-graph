@@ -3,21 +3,13 @@ package Build::Graph::Role::CommandProvider;
 use strict;
 use warnings;
 
+use parent 'Build::Graph::Role::Plugin';
+
 sub new {
 	my ($class, @args) = @_;
-	return bless {
-		commands => { $class->_get_commands(@args) },
-	}, $class;
-}
-
-sub dependencies {
-	my $self = shift;
-	return ref $self || $self;
-}
-
-sub serialize {
-	my $self = shift;
-	return { module => ref($self) || $self };
+	my $ret = $class->SUPER::new(@args);
+	$ret->{commands} = { $class->_get_commands(@args) };
+	return $ret;
 }
 
 sub lookup_command {
