@@ -22,18 +22,18 @@ sub get {
 	my ($self, $key) = @_;
 	my ($groupname, $command) = split m{/}, $key, 2;
 	my $group = $self->{groups}{$groupname};
-	return $group ? $group->{commands}{$command} : ();
-}
-
-sub add {
-	my ($self, $name, %args) = @_;
-	%{ $self->{groups}{$name} } = %args;
-	return;
+	return $group ? $group->lookup($command) : ();
 }
 
 sub load {
-	my ($self, $provider, @args) = @_;
-	$self->loader->load($provider, @args)->configure_commands($self, @args);
+	my ($self, $name, $provider, @args) = @_;
+	$self->add($name, $self->loader->load($provider, @args));
+	return;
+}
+
+sub add {
+	my ($self, $name, $group) = @_;
+	$self->{groups}{$name} = $group;
 	return;
 }
 
@@ -46,7 +46,7 @@ sub to_hashref {
 	my $self = shift;
 	my %ret;
 	for my $name (keys %{ $self->{groups} }) {
-		$ret{$name} = { module => $self->{groups}{$name}{module} };
+		$ret{$name} = $self->{groups}{$name}->serialize;
 	}
 	return \%ret;
 }

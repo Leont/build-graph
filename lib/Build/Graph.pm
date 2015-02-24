@@ -14,7 +14,7 @@ sub new {
 
 	return bless {
 		nodes        => $args{nodes}        || {},
-		loader_class => $args{loader_class} || 'Build::Graph::ClassLoader',
+		loader_class => $args{loader_class} || 'Build::Graph::ObjectLoader',
 		loader_args  => $args{loader_args}  || {},
 		loader       => $args{loader},
 		commandset   => $args{commandset},
@@ -189,8 +189,8 @@ sub load {
 		named        => $hashref->{named},
 	);
 	$ret->_load_nodes($hashref->{nodes});
-	for my $module (values %{ $hashref->{commandset} }) {
-		$ret->commandset->load($module->{module});
+	for my $name (keys %{ $hashref->{commandset} }) {
+		$ret->commandset->load($name, $hashref->{commandset}{$name}{module});
 	}
 	return $ret;
 }

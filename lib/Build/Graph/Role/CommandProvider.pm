@@ -3,12 +3,29 @@ package Build::Graph::Role::CommandProvider;
 use strict;
 use warnings;
 
-sub configure_commands;
+sub new {
+	my ($class, @args) = @_;
+	return bless {
+		commands => { $class->_get_commands(@args) },
+	}, $class;
+}
 
 sub dependencies {
 	my $self = shift;
-	return ref $self;
+	return ref $self || $self;
 }
+
+sub serialize {
+	my $self = shift;
+	return { module => ref($self) || $self };
+}
+
+sub lookup {
+	my ($self, $name) = @_;
+	return $self->{commands}{$name};
+}
+
+sub _get_commands;
 
 1;
 
