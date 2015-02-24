@@ -14,10 +14,10 @@ sub new {
 
 	return bless {
 		nodes        => $args{nodes}        || {},
-		loader_class => $args{loader_class} || 'Build::Graph::ObjectLoader',
+		loader_class => $args{loader_class} || 'Build::Graph::CommandLoader',
 		loader_args  => $args{loader_args}  || {},
 		loader       => $args{loader},
-		commandset   => $args{commandset},
+		plugins      => $args{plugins},
 		info_class   => $args{info_class}   || 'Build::Graph::Info',
 		wildcards    => $args{wildcards}    || [],
 		named        => $args{named}        || {},
@@ -110,11 +110,11 @@ sub loader {
 	};
 }
 
-sub commandset {
+sub plugins {
 	my $self = shift;
-	return $self->{commandset} ||= do {
-		require Build::Graph::CommandSet;
-		Build::Graph::CommandSet->new(loader => $self->loader);
+	return $self->{plugins} ||= do {
+		require Build::Graph::PluginSet;
+		Build::Graph::PluginSet->new;
 	};
 }
 
@@ -156,7 +156,7 @@ sub _sort_nodes {
 sub to_hashref {
 	my $self = shift;
 	return {
-		commandset => $self->commandset->to_hashref,
+		plugins    => $self->plugins->to_hashref,
 		loader     => $self->{loader}->to_hashref,
 		nodes      => $self->_nodes_to_hashref,
 		info_class => $self->info_class,
@@ -189,10 +189,16 @@ sub load {
 		named        => $hashref->{named},
 	);
 	$ret->_load_nodes($hashref->{nodes});
-	for my $name (keys %{ $hashref->{commandset} }) {
-		$ret->commandset->load($name, $hashref->{commandset}{$name}{module});
+	for my $name (keys %{ $hashref->{plugins} }) {
+		$ret->load_plugin($name, $hashref->{plugins}{$name}{module});
 	}
 	return $ret;
+}
+
+sub load_plugin {
+	my ($self, $name, $module, %args) = @_;
+	$self->loader->load($module, %args, name => $name);
+	return;
 }
 
 1;

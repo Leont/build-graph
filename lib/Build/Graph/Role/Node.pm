@@ -37,7 +37,7 @@ sub add_dependencies {
 sub action {
 	my ($self) = @_;
 	my ($command, @raw_args) = @{ $self->{action} || [] } or return;
-	my $callback = $self->{graph}->commandset->get($command) or Carp::croak("Command $command doesn't exist");
+	my $callback = $self->{graph}->plugins->get_command($command) or Carp::croak("Command $command doesn't exist");
 	my @arguments = $self->{graph}->expand(@raw_args);
 	return ($callback, @arguments);
 }

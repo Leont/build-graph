@@ -20,7 +20,7 @@ sub serialize {
 	return { module => ref($self) || $self };
 }
 
-sub lookup {
+sub lookup_command {
 	my ($self, $name) = @_;
 	return $self->{commands}{$name};
 }

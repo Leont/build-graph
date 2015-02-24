@@ -1,4 +1,4 @@
-package Build::Graph::CommandSet;
+package Build::Graph::PluginSet;
 
 use strict;
 use warnings;
@@ -9,37 +9,20 @@ sub new {
 	my ($class, %args) = @_;
 	return bless {
 		groups => $args{groups},
-		loader => $args{loader} || Carp::croak('No loader given'),
 	}, $class;
 }
 
-sub loader {
-	my $self = shift;
-	return $self->{loader};
-}
-
-sub get {
+sub get_command {
 	my ($self, $key) = @_;
 	my ($groupname, $command) = split m{/}, $key, 2;
 	my $group = $self->{groups}{$groupname};
-	return $group ? $group->lookup($command) : ();
+	return $group && $group->can('lookup_command') ? $group->lookup_command($command) : ();
 }
 
-sub load {
-	my ($self, $name, $provider, @args) = @_;
-	$self->add($name, $self->loader->load($provider, @args));
-	return;
-}
-
-sub add {
+sub add_plugin {
 	my ($self, $name, $group) = @_;
 	$self->{groups}{$name} = $group;
 	return;
-}
-
-sub all_for_group {
-	my ($self, $groupname) = @_;
-	return keys %{ $self->{groups}{$groupname}{commands} };
 }
 
 sub to_hashref {
