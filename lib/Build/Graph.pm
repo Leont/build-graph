@@ -14,9 +14,6 @@ sub new {
 
 	return bless {
 		nodes        => $args{nodes}        || {},
-		loader_class => $args{loader_class} || 'Build::Graph::CommandLoader',
-		loader_args  => $args{loader_args}  || {},
-		loader       => $args{loader},
 		plugins      => $args{plugins},
 		info_class   => $args{info_class}   || 'Build::Graph::Info',
 		wildcards    => $args{wildcards}    || [],
@@ -101,15 +98,6 @@ sub add_subst {
 	return $sub;
 }
 
-sub loader {
-	my $self = shift;
-	return $self->{loader} ||= do {
-		my $class = $self->{loader_class};
-		Module::Runtime::require_module($class);
-		$class->new(%{ $self->{loader_args} }, graph => $self);
-	};
-}
-
 sub plugins {
 	my $self = shift;
 	return $self->{plugins} ||= do {
@@ -157,7 +145,6 @@ sub to_hashref {
 	my $self = shift;
 	return {
 		plugins    => $self->plugins->to_hashref,
-		loader     => $self->{loader}->to_hashref,
 		nodes      => $self->_nodes_to_hashref,
 		info_class => $self->info_class,
 		named      => $self->{named},
@@ -181,10 +168,7 @@ sub _load_nodes {
 
 sub load {
 	my ($self, $hashref) = @_;
-	my $loader_class = delete $hashref->{loader}{module};
 	my $ret          = Build::Graph->new(
-		loader_class => $loader_class,
-		loader_args  => $hashref->{loader},
 		info_class   => $hashref->{info_class},
 		named        => $hashref->{named},
 	);
@@ -197,7 +181,9 @@ sub load {
 
 sub load_plugin {
 	my ($self, $name, $module, %args) = @_;
-	$self->loader->load($module, %args, name => $name);
+	Module::Runtime::require_module($module);
+	my $ret = $module->new(%args, name => $name);
+	$self->plugins->add_plugin($name, $ret);
 	return;
 }
 
