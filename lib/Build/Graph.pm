@@ -157,22 +157,17 @@ sub _nodes_to_hashref {
 	return \%ret;
 }
 
-sub _load_nodes {
-	my ($self, $nodes) = @_;
-	for my $key (keys %{$nodes}) {
-		my $class = delete $nodes->{$key}{class};
-		$self->{nodes}{$key} = $class->new(%{ $nodes->{$key} }, name => $key, graph => $self);
-	}
-	return;
-}
-
 sub load {
-	my ($self, $hashref) = @_;
+	my ($class, $hashref) = @_;
 	my $ret          = Build::Graph->new(
 		info_class   => $hashref->{info_class},
 		named        => $hashref->{named},
 	);
-	$ret->_load_nodes($hashref->{nodes});
+	for my $key (keys %{ $hashref->{nodes} }) {
+		my $value = $hashref->{nodes}{$key};
+		my $class = delete $value->{class};
+		$ret->{nodes}{$key} = $class->new(%{$value}, name => $key, graph => $ret);
+	}
 	for my $plugin (@{ $hashref->{plugins} }) {
 		$ret->load_plugin($plugin->{name}, $plugin->{module});
 	}
