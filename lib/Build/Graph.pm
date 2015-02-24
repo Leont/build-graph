@@ -71,9 +71,10 @@ sub add_wildcard {
 	return $wildcard;
 }
 
-sub get_named {
-	my ($self, $name) = @_;
-	return @{ $self->{named}{$name} };
+sub add_named {
+	my ($self, $name, @values) = @_;
+	push @{ $self->{named}{$name} }, @values;
+	return;
 }
 
 sub match {
