@@ -68,6 +68,7 @@ sub add_wildcard {
 	push @{ $self->{wildcards} }, $wildcard;
 	$wildcard->match($_) for grep { !$self->{nodes}{$_}->phony } keys %{ $self->{nodes} };
 	$wildcard->on_file(sub { my $filename = shift; push @{ $self->{variables}{ $args{name} } }, $filename }) if $args{name};
+	$self->add_variable($args{name}) if $args{name};
 	return $wildcard;
 }
 
@@ -96,6 +97,7 @@ sub add_subst {
 		my $target = $sub->process($source);
 		push @{ $self->{variables}{ $args{name} } }, $target if $args{name};
 	});
+	$self->add_variable($args{name}) if $args{name};
 	return $sub;
 }
 
