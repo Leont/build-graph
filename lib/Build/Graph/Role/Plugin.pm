@@ -24,3 +24,5 @@ sub serialize {
 }
 
 1;
+
+# ABSTRACT: A base role for various types of plugins

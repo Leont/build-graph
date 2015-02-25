@@ -60,6 +60,8 @@ sub to_hashref {
 
 1;
 
+# ABSTRACT: A role shared by different Node types
+
 =attr dependencies
 
 =attr action

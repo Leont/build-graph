@@ -27,3 +27,5 @@ sub on_file {
 }
 
 1;
+
+# ABSTRACT: A role shared by sets of files (e.g. wildcards and substitutions)
