@@ -8,7 +8,7 @@ use parent 'Build::Graph::Role::Plugin';
 sub new {
 	my ($class, @args) = @_;
 	my $ret = $class->SUPER::new(@args);
-	$ret->{commands} = { $class->_get_commands(@args) };
+	$ret->{commands} = $class->_get_commands(@args);
 	return $ret;
 }
 

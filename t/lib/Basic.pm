@@ -13,11 +13,11 @@ use File::Basename 'dirname';
 sub _get_commands {
 	my ($class, %args) = @_;
 	my $next_is = $args{next_is};
-	return (
+	return {
 		'spew' => sub { my $info = shift; $next_is->($info->name); spew($info->name, $info->arguments) },
 		'poke' => sub { $next_is->('poke') },
 		'noop' => sub { $next_is->($_[0]->name) },
-	);
+	};
 }
 
 sub spew {
