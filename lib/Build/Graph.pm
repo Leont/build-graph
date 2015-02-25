@@ -17,7 +17,7 @@ sub new {
 		plugins      => $args{plugins},
 		info_class   => $args{info_class}   || 'Build::Graph::Info',
 		wildcards    => $args{wildcards}    || [],
-		named        => $args{named}        || {},
+		variables    => $args{variables}    || {},
 	}, $class;
 }
 
@@ -28,7 +28,7 @@ sub get_node {
 
 sub expand {
 	my ($self, @keys) = @_;
-	return map { /\A \$\( ([\w.-]+)  \) \z /xms ? @{ $self->{named}{$1} } : $_ } @keys;
+	return map { /\A \$\( ([\w.-]+)  \) \z /xms ? @{ $self->{variables}{$1} } : $_ } @keys;
 }
 
 sub add_file {
@@ -67,13 +67,13 @@ sub add_wildcard {
 	my $wildcard = Build::Graph::Wildcard->new(%args);
 	push @{ $self->{wildcards} }, $wildcard;
 	$wildcard->match($_) for grep { !$self->{nodes}{$_}->phony } keys %{ $self->{nodes} };
-	$wildcard->on_file(sub { my $filename = shift; push @{ $self->{named}{ $args{name} } }, $filename }) if $args{name};
+	$wildcard->on_file(sub { my $filename = shift; push @{ $self->{variables}{ $args{name} } }, $filename }) if $args{name};
 	return $wildcard;
 }
 
-sub add_named {
+sub add_variable {
 	my ($self, $name, @values) = @_;
-	push @{ $self->{named}{$name} }, @values;
+	push @{ $self->{variables}{$name} }, @values;
 	return;
 }
 
@@ -94,7 +94,7 @@ sub add_subst {
 	$wildcard->on_file(sub {
 		my $source = shift;
 		my $target = $sub->process($source);
-		push @{ $self->{named}{ $args{name} } }, $target if $args{name};
+		push @{ $self->{variables}{ $args{name} } }, $target if $args{name};
 	});
 	return $sub;
 }
@@ -149,7 +149,7 @@ sub to_hashref {
 		plugins    => $self->{plugins} ? $self->plugins->to_hashref : [],
 		nodes      => \%nodes,
 		info_class => $self->{info_class},
-		named      => $self->{named},
+		variables  => $self->{variables},
 	};
 }
 
@@ -157,7 +157,7 @@ sub load {
 	my ($class, $hashref) = @_;
 	my $ret          = Build::Graph->new(
 		info_class   => $hashref->{info_class},
-		named        => $hashref->{named},
+		variables    => $hashref->{variables},
 	);
 	for my $key (keys %{ $hashref->{nodes} }) {
 		my $value = $hashref->{nodes}{$key};
