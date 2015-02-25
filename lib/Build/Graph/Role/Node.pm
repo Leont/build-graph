@@ -34,17 +34,10 @@ sub add_dependencies {
 	return;
 }
 
-sub action {
-	my ($self) = @_;
-	my ($command, @raw_args) = @{ $self->{action} || [] } or return;
-	my $callback = $self->{graph}->plugins->get_command($command) or Carp::croak("Command $command doesn't exist");
-	my @arguments = $self->{graph}->expand(@raw_args);
-	return ($callback, @arguments);
-}
-
 sub run {
 	my ($self, $options) = @_;
-	my ($callback, @arguments) = $self->action or return;
+	my @parts = @{ $self->{action} || [] } or return;
+	my ($callback, @arguments) = $self->{graph}->resolve(@parts) or return;
 	$callback->($self->{graph}->info_class->new(%{$options}, name => $self->name, arguments => \@arguments));
 	return;
 }

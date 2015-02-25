@@ -31,6 +31,13 @@ sub expand {
 	return map { /\A \$\( ([\w.-]+)  \) \z /xms ? @{ $self->{variables}{$1} } : $_ } @keys;
 }
 
+sub resolve {
+	my ($self, $command, @raw_args) = @_;
+	my $callback = $self->plugins->get_command($command) or Carp::croak("Command $command doesn't exist");
+	my @arguments = $self->expand(@raw_args);
+	return ($callback, @arguments);
+}
+
 sub add_file {
 	my ($self, $name, %args) = @_;
 	Carp::croak("File '$name' already exists in database") if !$args{override} && exists $self->{nodes}{$name};
