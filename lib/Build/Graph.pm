@@ -144,18 +144,13 @@ sub _sort_nodes {
 
 sub to_hashref {
 	my $self = shift;
+	my %nodes = map { $_ => $self->get_node($_)->to_hashref } keys %{ $self->{nodes} };
 	return {
-		plugins    => $self->plugins->to_hashref,
-		nodes      => $self->_nodes_to_hashref,
-		info_class => $self->info_class,
+		plugins    => $self->{plugins} ? $self->plugins->to_hashref : [],
+		nodes      => \%nodes,
+		info_class => $self->{info_class},
 		named      => $self->{named},
 	};
-}
-
-sub _nodes_to_hashref {
-	my $self = shift;
-	my %ret = map { $_ => $self->get_node($_)->to_hashref } keys %{ $self->{nodes} };
-	return \%ret;
 }
 
 sub load {
