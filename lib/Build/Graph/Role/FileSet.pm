@@ -6,7 +6,6 @@ use warnings;
 sub new {
 	my ($class, %args) = @_;
 	return bless {
-#		graph        => $args{graph},
 		files        => {},
 		substs       => [],
 	}, $class;
@@ -14,7 +13,7 @@ sub new {
 
 sub files {
 	my $self = shift;
-	return @{ $self->{files} };
+	return keys %{ $self->{files} };
 }
 
 sub on_file {

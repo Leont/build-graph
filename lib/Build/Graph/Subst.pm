@@ -6,14 +6,16 @@ use warnings;
 use parent 'Build::Graph::Role::FileSet';
 
 use Carp ();
+use Scalar::Util ();
 
 sub new {
 	my ($class, %args) = @_;
 	my $self = $class->SUPER::new(%args);
 	$self->{graph}        = $args{graph};
-	$self->{subst}        = $args{subst} || Carp::croak('No subst given');
+	$self->{subst}        = $args{subst}  || Carp::croak('No subst given');
 	$self->{action}       = $args{action} || Carp::croak('No action given');
 	$self->{dependencies} = $args{dependencies} || [];
+	Scalar::Util::weaken($self->{graph});
 	return $self;
 }
 
