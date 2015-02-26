@@ -9,20 +9,20 @@ sub new {
 	my ($class, %args) = @_;
 	return bless {
 		name         => $args{name} || Carp::croak('No name given'),
-		files        => {},
+		files        => [],
 		substs       => [],
 	}, $class;
 }
 
 sub files {
 	my $self = shift;
-	return keys %{ $self->{files} };
+	return @{ $self->{files} };
 }
 
 sub on_file {
 	my ($self, $sub) = @_;
 	push @{ $self->{substs} }, $sub;
-	for my $file (keys %{ $self->{files} }) {
+	for my $file (@{ $self->{files} }) {
 		$sub->process($file);
 	}
 	return;

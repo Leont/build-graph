@@ -34,8 +34,8 @@ sub _dir_matches {
 sub match {
 	my ($self, $filename) = @_;
 	if ($self->_dir_matches($filename) && $self->{matcher}->($filename)) {
-		my @subst = map { $_->($filename) } @{ $self->{substs} };
-		push @{ $self->{files}{$filename} }, @subst;
+		push @{ $self->{files} }, $filename;
+		$_->($filename) for	@{ $self->{substs} };
 	}
 	return;
 }
