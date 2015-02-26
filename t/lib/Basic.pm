@@ -14,9 +14,9 @@ sub _get_commands {
 	my ($class, %args) = @_;
 	my $next_is = $args{next_is};
 	return {
-		'spew' => sub { my $info = shift; $next_is->($info->name); spew($info->name, $info->arguments) },
+		'spew' => sub { my $info = shift; $next_is->($info->target); spew($info->target, $info->arguments) },
 		'poke' => sub { $next_is->('poke') },
-		'noop' => sub { $next_is->($_[0]->name) },
+		'noop' => sub { $next_is->($_[0]->target) },
 	};
 }
 

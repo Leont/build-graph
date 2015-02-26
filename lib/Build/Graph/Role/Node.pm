@@ -38,7 +38,7 @@ sub run {
 	my ($self, $options) = @_;
 	my @parts = @{ $self->{action} || [] } or return;
 	my ($callback, @arguments) = $self->{graph}->resolve(@parts) or return;
-	$callback->($self->{graph}->info_class->new(%{$options}, name => $self->name, arguments => \@arguments));
+	$callback->($self->{graph}->info_class->new(%{$options}, target => $self->name, arguments => \@arguments));
 	return;
 }
 

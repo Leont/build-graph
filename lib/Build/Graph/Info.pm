@@ -8,14 +8,14 @@ use Carp ();
 sub new {
 	my ($class, %args) = @_;
 	return bless {
-		name      => $args{name} || Carp::croak('No name given'),
+		target    => $args{target} || Carp::croak('No target given'),
 		arguments => $args{arguments},
 	}, $class;
 }
 
-sub name {
+sub target {
 	my $self = shift;
-	return $self->{name};
+	return $self->{target};
 }
 
 sub arguments {
