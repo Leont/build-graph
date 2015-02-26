@@ -28,7 +28,7 @@ sub get_node {
 
 sub expand {
 	my ($self, @keys) = @_;
-	return map { /\A \$\( ([\w.-]+)  \) \z /xms ? @{ $self->{variables}{$1} } : $_ } @keys;
+	return map { /\A \@\( ([\w.-]+)  \) \z /xms ? @{ $self->{variables}{$1} } : $_ } @keys;
 }
 
 sub resolve {
