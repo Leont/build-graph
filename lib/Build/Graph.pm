@@ -70,7 +70,7 @@ sub add_phony {
 }
 
 sub add_wildcard {
-	my ($self, %args) = @_;
+	my ($self, $name, %args) = @_;
 	if (!$args{matcher} && $args{pattern}) {
 		my $pattern = delete $args{pattern};
 		if (ref($pattern) ne 'Regexp') {
@@ -84,11 +84,11 @@ sub add_wildcard {
 		};
 	}
 	require Build::Graph::Wildcard;
-	my $wildcard = Build::Graph::Wildcard->new(%args);
+	my $wildcard = Build::Graph::Wildcard->new(%args, name => $name);
 	push @{ $self->{wildcards} }, $wildcard;
 	$wildcard->match($_) for grep { !$self->{nodes}{$_}->phony } keys %{ $self->{nodes} };
-	$wildcard->on_file(sub { my $filename = shift; push @{ $self->{variables}{ $args{name} } }, $filename }) if $args{name};
-	$self->add_variable($args{name}) if $args{name};
+	$wildcard->on_file(sub { my $filename = shift; push @{ $self->{variables}{$name} }, $filename });
+	$self->add_variable($name);
 	return $wildcard;
 }
 
@@ -109,15 +109,15 @@ sub match {
 }
 
 sub add_subst {
-	my ($self, $wildcard, %args) = @_;
+	my ($self, $name, $wildcard, %args) = @_;
 	require Build::Graph::Subst;
-	my $sub = Build::Graph::Subst->new(%args, graph => $self);
+	my $sub = Build::Graph::Subst->new(%args, graph => $self, name => $name);
 	$wildcard->on_file(sub {
 		my $source = shift;
 		my $target = $sub->process($source);
-		push @{ $self->{variables}{ $args{name} } }, $target if $args{name};
+		push @{ $self->{variables}{$name} }, $target;
 	});
-	$self->add_variable($args{name}) if $args{name};
+	$self->add_variable($name);
 	return $sub;
 }
 
