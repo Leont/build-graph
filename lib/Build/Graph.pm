@@ -15,7 +15,6 @@ sub new {
 	return bless {
 		nodes        => $args{nodes}        || {},
 		plugins      => $args{plugins},
-		info_class   => $args{info_class}   || 'Build::Graph::Info',
 		wildcards    => $args{wildcards}    || [],
 		variables    => $args{variables}    || {},
 	}, $class;
@@ -27,15 +26,29 @@ sub get_node {
 }
 
 sub expand {
-	my ($self, @keys) = @_;
-	return map { /\A \@\( ([\w.-]+)  \) \z /xms ? @{ $self->{variables}{$1} } : $_ } @keys;
+	my ($self, $key, $options) = @_;
+	if ($key =~ /\A \@\( ([\w.-]+)  \) \z /xms) {
+		my $variable = $self->{variables}{$1} or die "No such variable $1\n";
+		return @{ $variable };
+	}
+	elsif ($key =~ /\A \$\( ([\w.-]+)  \) \z /xms) {
+		my $argument = $options->{$1} or die "No such argument $1\n";
+		return $argument;
+	}
+	elsif ($key =~ /\A \%\( ([\w.,-]+)  \) \z /xms) {
+		my @keys = grep { exists $options->{$_} } split ',', $1;
+		return { map { $_ => $options->{$_} } @keys };
+	}
+	elsif ($key eq '{}') {
+		return {};
+	}
+	return $key;
 }
 
-sub resolve {
-	my ($self, $command, @raw_args) = @_;
+sub run_command {
+	my ($self, $options, $command, @raw_args) = @_;
 	my $callback = $self->plugins->get_command($command) or Carp::croak("Command $command doesn't exist");
-	my @arguments = $self->expand(@raw_args);
-	return ($callback, @arguments);
+	$callback->(map { $self->expand($_, $options) } @raw_args);
 }
 
 sub add_file {
@@ -116,11 +129,6 @@ sub plugins {
 	};
 }
 
-sub info_class {
-	my $self = shift;
-	return $self->{info_class};
-}
-
 my $node_sorter;
 $node_sorter = sub {
 	my ($self, $current, $callback, $seen, $loop) = @_;
@@ -128,7 +136,7 @@ $node_sorter = sub {
 	return if $seen->{$current}++;
 	local $loop->{$current} = 1;
 	if (my $node = $self->get_node($current)) {
-		$self->$node_sorter($_, $callback, $seen, $loop) for $self->expand($node->dependencies);
+		$self->$node_sorter($_, $callback, $seen, $loop) for map { $self->expand($_, {}) } $node->dependencies;
 		$callback->($current, $node);
 	}
 	elsif (not -e $current) {
@@ -139,7 +147,6 @@ $node_sorter = sub {
 
 sub run {
 	my ($self, $startpoint, %options) = @_;
-	Module::Runtime::require_module($self->info_class);
 	$self->$node_sorter($startpoint, sub { $_[1]->run(\%options) }, {}, {});
 	return;
 }
@@ -157,7 +164,6 @@ sub to_hashref {
 	return {
 		plugins    => $self->{plugins} ? $self->plugins->to_hashref : [],
 		nodes      => \%nodes,
-		info_class => $self->{info_class},
 		variables  => $self->{variables},
 	};
 }
@@ -165,7 +171,6 @@ sub to_hashref {
 sub load {
 	my ($class, $hashref) = @_;
 	my $ret          = Build::Graph->new(
-		info_class   => $hashref->{info_class},
 		variables    => $hashref->{variables},
 	);
 	for my $key (keys %{ $hashref->{nodes} }) {

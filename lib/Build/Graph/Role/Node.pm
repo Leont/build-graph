@@ -35,10 +35,10 @@ sub add_dependencies {
 }
 
 sub run {
-	my ($self, $options) = @_;
-	my @parts = @{ $self->{action} || [] } or return;
-	my ($callback, @arguments) = $self->{graph}->resolve(@parts) or return;
-	$callback->($self->{graph}->info_class->new(%{$options}, target => $self->name, arguments => \@arguments));
+	my ($self, $more) = @_;
+	my @command = @{ $self->{action} || [] } or return;
+	my %options = (target => $self->{name}, dependencies => $self->{dependendies}, source => $self->{dependencies}[0], %{$more});
+	$self->{graph}->run_command(\%options, @command) or return;
 	return;
 }
 

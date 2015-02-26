@@ -22,7 +22,7 @@ sub new {
 sub process {
 	my ($self, $source) = @_;
 	my $target = $self->{subst}->($source);
-	my $action = $self->{action}->($target, $source);
+	my $action = [ @{ $self->{action} } ];
 	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} } ], action => $action);
 	my @subst = map { $_->process($target) } @{ $self->{substs} };
 	push @{ $self->{files}{$target} }, @subst;

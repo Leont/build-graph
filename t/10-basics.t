@@ -24,24 +24,21 @@ END { rmtree $dirname if defined $dirname }
 $SIG{INT} = sub { rmtree $dirname; die "Interrupted!\n" };
 
 my $source1_filename = catfile($dirname, 'source1');
-$graph->add_file($source1_filename, action => [ 'basic/spew', 'Hello' ]);
+$graph->add_file($source1_filename, action => [ 'basic/spew', '$(target)', 'Hello' ]);
 
 my $source2_filename = catfile($dirname, 'source2');
-$graph->add_file($source2_filename, action => [ 'basic/spew', 'World' ], dependencies => [ $source1_filename ]);
+$graph->add_file($source2_filename, action => [ 'basic/spew', '$(target)', 'World' ], dependencies => [ $source1_filename ]);
 
 my $wildcard = $graph->add_wildcard(dir => $dirname, pattern => '*.foo');
-$graph->add_subst($wildcard, subst => sub { (my $target = $_[0]) =~ s/\.foo/.bar/; return $target }, action => sub {
-	my ($target, $source) = @_;
-	return [ 'basic/spew', $source ];
-});
+$graph->add_subst($wildcard, subst => sub { (my $target = $_[0]) =~ s/\.foo/.bar/; return $target }, action => [ 'basic/spew', '$(target)', '$(source)' ]);
 
 my $source3_foo = catfile($dirname, 'source3.foo');
-$graph->add_file($source3_foo, action => [ 'basic/spew', 'foo' ]);
+$graph->add_file($source3_foo, action => [ 'basic/spew', '$(target)', 'foo' ]);
 my $source3_bar = catfile($dirname, 'source3.bar');
 
-$graph->add_phony('build', action => [ 'basic/noop' ], dependencies => [ $source1_filename, $source2_filename, $source3_bar ]);
-$graph->add_phony('test', action => [ 'basic/noop' ], dependencies => [ 'build' ]);
-$graph->add_phony('install', action => [ 'basic/noop' ], dependencies => [ 'build' ]);
+$graph->add_phony('build', action => [ 'basic/noop', '$(target)' ], dependencies => [ $source1_filename, $source2_filename, $source3_bar ]);
+$graph->add_phony('test', action => [ 'basic/noop', '$(target)' ], dependencies => [ 'build' ]);
+$graph->add_phony('install', action => [ 'basic/noop', '$(target)' ], dependencies => [ 'build' ]);
 
 my @sorted = $graph->_sort_nodes('build');
 
