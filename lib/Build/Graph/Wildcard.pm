@@ -12,7 +12,7 @@ use File::Spec ();
 sub new {
 	my ($class, %args) = @_;
 	my $self = $class->SUPER::new(%args);
-	$self->{matcher} = $args{matcher} || Carp::croak('No matcher is given');
+	$self->{pattern} = $args{pattern} || Carp::croak('No pattern is given');
 	$self->{dir}     = ref($args{dir}) ? $args{dir} : [ File::Spec->splitdir($args{dir}) ];
 	return $self;
 }
@@ -31,9 +31,15 @@ sub _dir_matches {
 	return File::Spec->catdir(@dirs[ 0..$#match ]) eq File::Spec->catdir(@match);
 }
 
+sub _match_filename {
+	my ($filename, $pattern) = @_;
+	require File::Basename;
+	return File::Basename::basename($filename) =~ $pattern;
+}
+
 sub match {
 	my ($self, $filename) = @_;
-	if ($self->_dir_matches($filename) && $self->{matcher}->($filename)) {
+	if ($self->_dir_matches($filename) && _match_filename($filename, $self->{pattern})) {
 		push @{ $self->{files} }, $filename;
 		$self->{graph}->add_variable($self->{name}, $filename);
 		$_->process($filename) for @{ $self->{substs} };

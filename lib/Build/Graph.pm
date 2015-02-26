@@ -71,17 +71,9 @@ sub add_phony {
 
 sub add_wildcard {
 	my ($self, $name, %args) = @_;
-	if (!$args{matcher} && $args{pattern}) {
-		my $pattern = delete $args{pattern};
-		if (ref($pattern) ne 'Regexp') {
-			require Text::Glob;
-			$pattern = Text::Glob::glob_to_regex($pattern);
-		}
-		$args{matcher} = sub {
-			my $filename = shift;
-			require File::Basename;
-			return File::Basename::basename($filename) =~ $pattern;
-		};
+	if (ref($args{pattern}) ne 'Regexp') {
+		require Text::Glob;
+		$args{pattern} = Text::Glob::glob_to_regex($args{pattern});
 	}
 	require Build::Graph::Wildcard;
 	my $wildcard = Build::Graph::Wildcard->new(%args, graph => $self, name => $name);
