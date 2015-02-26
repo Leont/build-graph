@@ -35,7 +35,8 @@ sub match {
 	my ($self, $filename) = @_;
 	if ($self->_dir_matches($filename) && $self->{matcher}->($filename)) {
 		push @{ $self->{files} }, $filename;
-		$_->($filename) for	@{ $self->{substs} };
+		$self->{graph}->add_variable($self->{name}, $filename);
+		$_->process($filename) for @{ $self->{substs} };
 	}
 	return;
 }

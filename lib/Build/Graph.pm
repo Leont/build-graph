@@ -84,11 +84,9 @@ sub add_wildcard {
 		};
 	}
 	require Build::Graph::Wildcard;
-	my $wildcard = Build::Graph::Wildcard->new(%args, name => $name);
+	my $wildcard = Build::Graph::Wildcard->new(%args, graph => $self, name => $name);
 	push @{ $self->{wildcards} }, $wildcard;
 	$wildcard->match($_) for grep { !$self->{nodes}{$_}->phony } keys %{ $self->{nodes} };
-	$wildcard->on_file(sub { my $filename = shift; push @{ $self->{variables}{$name} }, $filename });
-	$self->add_variable($name);
 	return $wildcard;
 }
 
@@ -112,12 +110,7 @@ sub add_subst {
 	my ($self, $name, $wildcard, %args) = @_;
 	require Build::Graph::Subst;
 	my $sub = Build::Graph::Subst->new(%args, graph => $self, name => $name);
-	$wildcard->on_file(sub {
-		my $source = shift;
-		my $target = $sub->process($source);
-		push @{ $self->{variables}{$name} }, $target;
-	});
-	$self->add_variable($name);
+	$wildcard->on_file($sub);
 	return $sub;
 }
 

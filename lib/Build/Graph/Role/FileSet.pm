@@ -4,14 +4,18 @@ use strict;
 use warnings;
 
 use Carp ();
+use Scalar::Util ();
 
 sub new {
 	my ($class, %args) = @_;
-	return bless {
+	my $self = bless {
 		name         => $args{name} || Carp::croak('No name given'),
+		graph        => $args{graph},
 		files        => [],
 		substs       => [],
 	}, $class;
+	Scalar::Util::weaken($self->{graph});
+	return $self;
 }
 
 sub files {

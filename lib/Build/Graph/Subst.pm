@@ -6,16 +6,13 @@ use warnings;
 use parent 'Build::Graph::Role::FileSet';
 
 use Carp ();
-use Scalar::Util ();
 
 sub new {
 	my ($class, %args) = @_;
 	my $self = $class->SUPER::new(%args);
-	$self->{graph}        = $args{graph};
 	$self->{subst}        = $args{subst}  || Carp::croak('No subst given');
 	$self->{action}       = $args{action} || Carp::croak('No action given');
 	$self->{dependencies} = $args{dependencies} || [];
-	Scalar::Util::weaken($self->{graph});
 	return $self;
 }
 
@@ -24,8 +21,9 @@ sub process {
 	my $target = $self->{subst}->($source);
 	my $action = [ @{ $self->{action} } ];
 	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} } ], action => $action);
-	my @subst = map { $_->process($target) } @{ $self->{substs} };
+	$_->process($target) for @{ $self->{substs} };
 	push @{ $self->{files} }, $target;
+	$self->{graph}->add_variable($self->{name}, $target);
 	return $target;
 }
 
