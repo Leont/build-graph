@@ -17,7 +17,7 @@ sub get_command {
 	my ($self, $key) = @_;
 	my ($groupname, $command) = split m{/}, $key, 2;
 	my $group = $self->{plugins}{$groupname};
-	return $group && $group->can('lookup_command') ? $group->lookup_command($command) : ();
+	return $group && $group->can('lookup_command') ? $group->lookup_command($command, $self) : ();
 }
 
 sub add_plugin {

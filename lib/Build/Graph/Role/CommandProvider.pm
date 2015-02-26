@@ -13,8 +13,13 @@ sub new {
 }
 
 sub lookup_command {
-	my ($self, $name) = @_;
-	return $self->{commands}{$name};
+	my ($self, $name, $plugins) = @_;
+	my $raw = $self->{commands}{$name};
+	if (ref($raw) eq 'ARRAY') {
+		my @commands = map { $plugins->get_command($_) } @{$raw};
+		return sub { $_->(@_) for @commands };
+	}
+	return $raw;
 }
 
 sub _get_commands;
