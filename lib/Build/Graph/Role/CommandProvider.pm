@@ -9,6 +9,7 @@ sub new {
 	my ($class, @args) = @_;
 	my $ret = $class->SUPER::new(@args);
 	$ret->{commands} = $class->_get_commands(@args);
+	$ret->{substs}   = $class->_get_substs(@args);
 	return $ret;
 }
 
@@ -22,7 +23,16 @@ sub lookup_command {
 	return $raw;
 }
 
+sub lookup_subst {
+	my ($self, $name) = @_;
+	return $self->{substs}{$name};
+}
+
 sub _get_commands;
+
+sub _get_substs {
+	return {};
+}
 
 1;
 

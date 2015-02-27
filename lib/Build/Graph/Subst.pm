@@ -18,9 +18,12 @@ sub new {
 
 sub process {
 	my ($self, $source) = @_;
-	my $target = $self->{subst}->($source);
-	my $action = [ @{ $self->{action} } ];
-	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} } ], action => $action);
+
+	my ($command, @args) = @{ $self->{subst} };
+	my $subst_action = $self->{graph}->plugins->get_subst($command);
+	my $target = $subst_action->(map { $self->{graph}->expand($_, { source => $source }) } @args);
+
+	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} } ], action => $self->{action});
 	$_->process($target) for @{ $self->{substs} };
 	push @{ $self->{files} }, $target;
 	$self->{graph}->add_variable($self->{name}, $target);

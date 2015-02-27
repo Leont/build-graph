@@ -12,10 +12,19 @@ use File::Basename 'dirname';
 
 sub _get_commands {
 	my ($class, %args) = @_;
-	my $next_is = $args{next_is};
 	return {
-		'spew' => sub { my ($target, $source) = @_; $next_is->($target); spew($target, $source) },
-		'noop' => $next_is,
+		'spew' => sub { my ($target, $source) = @_; $args{next_is}->($target); spew($target, $source) },
+		'noop' => $args{next_is},
+	};
+}
+
+sub _get_substs {
+	return {
+		's-ext' => sub {
+			my ($orig, $repl, $source) = @_;
+			$source =~ s/(?<=\.)\Q$orig\E\z/$repl/;
+			return $source;
+		}
 	};
 }
 

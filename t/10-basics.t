@@ -30,7 +30,7 @@ my $source2_filename = catfile($dirname, 'source2');
 $graph->add_file($source2_filename, action => [ 'basic/spew', '$(target)', 'World' ], dependencies => [ $source1_filename ]);
 
 my $wildcard = $graph->add_wildcard('foo-files', dir => $dirname, pattern => '*.foo');
-$graph->add_subst('bar-files', $wildcard, subst => sub { (my $target = $_[0]) =~ s/\.foo/.bar/; return $target }, action => [ 'basic/spew', '$(target)', '$(source)' ]);
+$graph->add_subst('bar-files', $wildcard, subst => [ 'basic/s-ext', 'foo', 'bar', '$(source)' ], action => [ 'basic/spew', '$(target)', '$(source)' ]);
 
 my $source3_foo = catfile($dirname, 'source3.foo');
 $graph->add_file($source3_foo, action => [ 'basic/spew', '$(target)', 'foo' ]);
