@@ -36,7 +36,7 @@ sub expand {
 		return $argument;
 	}
 	elsif ($key =~ /\A \%\( ([\w.,-]+)  \) \z /xms) {
-		my @keys = grep { exists $options->{$_} } split ',', $1;
+		my @keys = grep { exists $options->{$_} } split /, ?/, $1;
 		return { map { $_ => $options->{$_} } @keys };
 	}
 	elsif ($key eq '{}') {
@@ -48,7 +48,7 @@ sub expand {
 sub run_command {
 	my ($self, $options, $command, @raw_args) = @_;
 	my $callback = $self->plugins->get_command($command) or Carp::croak("Command $command doesn't exist");
-	$callback->(map { $self->expand($_, $options) } @raw_args);
+	return $callback->(map { $self->expand($_, $options) } @raw_args);
 }
 
 sub add_file {
