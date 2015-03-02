@@ -1,4 +1,4 @@
-package Build::Graph::Role::FileSet;
+package Build::Graph::Role::Entries;
 
 use strict;
 use warnings;
@@ -11,22 +11,22 @@ sub new {
 	my $self = bless {
 		name         => $args{name} || Carp::croak('No name given'),
 		graph        => $args{graph},
-		files        => [],
+		entries      => [],
 		substs       => [],
 	}, $class;
 	Scalar::Util::weaken($self->{graph});
 	return $self;
 }
 
-sub files {
+sub entries {
 	my $self = shift;
-	return @{ $self->{files} };
+	return @{ $self->{entries} };
 }
 
 sub on_file {
 	my ($self, $sub) = @_;
 	push @{ $self->{substs} }, $sub;
-	for my $file (@{ $self->{files} }) {
+	for my $file (@{ $self->{entries} }) {
 		$sub->process($file);
 	}
 	return;
@@ -34,4 +34,4 @@ sub on_file {
 
 1;
 
-# ABSTRACT: A role shared by sets of files (e.g. wildcards and substitutions)
+# ABSTRACT: A role shared by sets of entries (e.g. wildcards and substitutions)

@@ -3,7 +3,7 @@ package Build::Graph::Subst;
 use strict;
 use warnings;
 
-use parent 'Build::Graph::Role::FileSet';
+use parent 'Build::Graph::Role::Entries';
 
 use Carp ();
 
@@ -25,7 +25,7 @@ sub process {
 
 	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} } ], action => $self->{action});
 	$_->process($target) for @{ $self->{substs} };
-	push @{ $self->{files} }, $target;
+	push @{ $self->{entries} }, $target;
 	$self->{graph}->add_variable($self->{name}, $target);
 	return $target;
 }

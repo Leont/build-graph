@@ -3,7 +3,7 @@ package Build::Graph::Wildcard;
 use strict;
 use warnings;
 
-use parent 'Build::Graph::Role::FileSet';
+use parent 'Build::Graph::Role::Entries';
 
 use Carp ();
 
@@ -40,7 +40,7 @@ sub _match_filename {
 sub match {
 	my ($self, $filename) = @_;
 	if ($self->_dir_matches($filename) && _match_filename($filename, $self->{pattern})) {
-		push @{ $self->{files} }, $filename;
+		push @{ $self->{entries} }, $filename;
 		$self->{graph}->add_variable($self->{name}, $filename);
 		$_->process($filename) for @{ $self->{substs} };
 	}
