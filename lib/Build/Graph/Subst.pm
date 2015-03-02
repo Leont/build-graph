@@ -20,7 +20,7 @@ sub process {
 	my ($self, $source) = @_;
 
 	my ($command, @args) = @{ $self->{subst} };
-	my $subst_action = $self->{graph}->plugins->get_subst($command);
+	my $subst_action = $self->{graph}->plugins->get_subst($command) or die "No such subst $command";
 	my $target = $subst_action->(map { $self->{graph}->expand($_, { source => $source }) } @args);
 
 	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} } ], action => $self->{action});
