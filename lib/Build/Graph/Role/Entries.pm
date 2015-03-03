@@ -11,8 +11,8 @@ sub new {
 	my $self = bless {
 		name         => $args{name} || Carp::croak('No name given'),
 		graph        => $args{graph},
-		entries      => [],
-		substs       => [],
+		entries      => $args{entries} || [],
+		substs       => [ map { ref() ? $_ : $args{graph}{named}{$_} } @{ $args{named} } ],
 	}, $class;
 	Scalar::Util::weaken($self->{graph});
 	return $self;
@@ -30,6 +30,16 @@ sub on_file {
 		$sub->process($file);
 	}
 	return;
+}
+
+sub to_hashref {
+	my $self = shift;
+	return {
+		name  => $self->{name},
+		entries => $self->{entries},
+		class => ref($self),
+		substs  => [ map { $_->{name} } @{ $self->{substs} } ],
+	};
 }
 
 1;

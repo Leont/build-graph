@@ -26,8 +26,14 @@ sub process {
 	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} } ], action => $self->{action});
 	$_->process($target) for @{ $self->{substs} };
 	push @{ $self->{entries} }, $target;
-	$self->{graph}->add_variable($self->{name}, $target);
 	return $target;
+}
+
+sub to_hashref {
+	my $self = shift;
+	my $ret = $self->SUPER::to_hashref;
+	@{$ret}{qw/subst action dependencies/} = @{$self}{qw/subst action dependencies/};
+	return $ret;
 }
 
 1;

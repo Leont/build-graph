@@ -9,14 +9,20 @@ use Module::Runtime qw//;
 use Build::Graph::Node::File;
 use Build::Graph::Node::Phony;
 
+use Build::Graph::Wildcard;
+use Build::Graph::Subst;
+use Build::Graph::Variable;
+
 sub new {
 	my ($class, %args) = @_;
 
 	return bless {
-		nodes        => $args{nodes}        || {},
+		nodes        => $args{nodes}     || {},
 		plugins      => $args{plugins},
-		wildcards    => $args{wildcards}    || [],
-		variables    => $args{variables}    || {},
+		wildcards    => $args{wildcards} || [],
+		named        => $args{named}     || {},
+		names        => $args{names}     || [],
+		seen         => $args{seen}      || {},
 	}, $class;
 }
 
@@ -28,8 +34,8 @@ sub get_node {
 sub expand {
 	my ($self, $key, $options) = @_;
 	if ($key =~ /\A \@\( ([\w.-]+)  \) \z /xms) {
-		my $variable = $self->{variables}{$1} or die "No such variable $1\n";
-		return @{ $variable };
+		my $variable = $self->{named}{$1} or die "No such variable $1\n";
+		return $variable->entries;
 	}
 	elsif ($key =~ /\A \$\( ([\w.-]+)  \) \z /xms) {
 		my $argument = $options->{$1} or die "No such argument $1\n";
@@ -75,22 +81,26 @@ sub add_wildcard {
 		require Text::Glob;
 		$args{pattern} = Text::Glob::glob_to_regex($args{pattern});
 	}
-	require Build::Graph::Wildcard;
 	my $wildcard = Build::Graph::Wildcard->new(%args, graph => $self, name => $name);
 	push @{ $self->{wildcards} }, $wildcard;
+	$self->{named}{$name} = $wildcard;
+	push @{ $self->{names} }, $name;
 	$wildcard->match($_) for grep { !$self->{nodes}{$_}->phony } keys %{ $self->{nodes} };
 	return $wildcard;
 }
 
 sub add_variable {
 	my ($self, $name, @values) = @_;
-	push @{ $self->{variables}{$name} }, @values;
+	$self->{named}{$name} ||= Build::Graph::Variable->new(name => $name);
+	$self->{named}{$name}->add_entries(@values);
+	push @{ $self->{names} }, $name;
 	return;
 }
 
 sub match {
 	my ($self, @names) = @_;
 	for my $name (@names) {
+		next if $self->{seen}{$name}++;
 		for my $wildcard (@{ $self->{wildcards} }) {
 			$wildcard->match($name);
 		}
@@ -100,9 +110,10 @@ sub match {
 
 sub add_subst {
 	my ($self, $name, $wildcard, %args) = @_;
-	require Build::Graph::Subst;
 	my $sub = Build::Graph::Subst->new(%args, graph => $self, name => $name);
 	$wildcard->on_file($sub);
+	$self->{named}{$name} = $sub;
+	push @{ $self->{names} }, $name;
 	return $sub;
 }
 
@@ -146,27 +157,32 @@ sub _sort_nodes {
 sub to_hashref {
 	my $self = shift;
 	my %nodes = map { $_ => $self->get_node($_)->to_hashref } keys %{ $self->{nodes} };
+	my @named = map { $self->{named}{$_}->to_hashref } @{ $self->{names} };
 	return {
 		plugins    => $self->{plugins} ? $self->plugins->to_hashref : [],
 		nodes      => \%nodes,
-		variables  => $self->{variables},
+		named      => \@named,
+		seen       => [ sort keys %{ $self->{seen} } ],
 	};
 }
 
 sub load {
 	my ($class, $hashref) = @_;
-	my $ret          = Build::Graph->new(
-		variables    => $hashref->{variables},
-	);
+	my $self = Build::Graph->new(seen => { map { $_ => 1 } @{ $hashref->{seen} } });
+	for my $named (reverse @{ $hashref->{named} }) {
+		my $entries = $named->{class}->new(%{ $named }, graph => $self);
+		$self->{named}{ $named->{name} } = $entries;
+		unshift @{ $self->{names} }, $named->{name};
+		unshift @{ $self->{wildcards} }, $entries if $entries->isa('Build::Graph::Wildcard')
+	}
 	for my $key (keys %{ $hashref->{nodes} }) {
 		my $value = $hashref->{nodes}{$key};
-		my $class = delete $value->{class};
-		$ret->{nodes}{$key} = $class->new(%{$value}, name => $key, graph => $ret);
+		$self->{nodes}{$key} = $value->{class}->new(%{$value}, name => $key, graph => $self);
 	}
 	for my $plugin (@{ $hashref->{plugins} }) {
-		$ret->load_plugin($plugin->{name}, $plugin->{module});
+		$self->load_plugin($plugin->{name}, $plugin->{module});
 	}
-	return $ret;
+	return $self;
 }
 
 sub load_plugin {

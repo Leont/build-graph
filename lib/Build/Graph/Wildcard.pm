@@ -13,6 +13,7 @@ sub new {
 	my ($class, %args) = @_;
 	my $self = $class->SUPER::new(%args);
 	$self->{pattern} = $args{pattern} || Carp::croak('No pattern is given');
+	$self->{pattern} = qr/$self->{pattern}/ if not ref $self->{pattern};
 	$self->{dir}     = ref($args{dir}) ? $args{dir} : [ File::Spec->splitdir($args{dir}) ];
 	return $self;
 }
@@ -41,10 +42,17 @@ sub match {
 	my ($self, $filename) = @_;
 	if ($self->_dir_matches($filename) && _match_filename($filename, $self->{pattern})) {
 		push @{ $self->{entries} }, $filename;
-		$self->{graph}->add_variable($self->{name}, $filename);
 		$_->process($filename) for @{ $self->{substs} };
 	}
 	return;
+}
+
+sub to_hashref {
+	my $self = shift;
+	my $ret = $self->SUPER::to_hashref;
+	$ret->{pattern} = "$self->{pattern}";
+	$ret->{dir}     = $self->{dir};
+	return $ret;
 }
 
 1;
