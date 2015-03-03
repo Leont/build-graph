@@ -4,7 +4,6 @@ use strict;
 use warnings;
 
 use Carp qw//;
-use Module::Runtime qw//;
 
 use Build::Graph::Node::File;
 use Build::Graph::Node::Phony;
@@ -187,7 +186,8 @@ sub load {
 
 sub load_plugin {
 	my ($self, $name, $module, %args) = @_;
-	Module::Runtime::require_module($module);
+	(my $filename = "$module.pm") =~ s{::}{/}g;
+	require $filename;
 	my $ret = $module->new(%args, name => $name);
 	$self->plugins->add_plugin($name, $ret);
 	return;
