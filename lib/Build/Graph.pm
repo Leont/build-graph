@@ -32,6 +32,7 @@ sub get_node {
 
 sub expand {
 	my ($self, $key, $options) = @_;
+	$options ||= {};
 	if ($key =~ /\A \@\( ([\w.-]+)  \) \z /xms) {
 		my $variable = $self->{named}{$1} or die "No such variable $1\n";
 		return $variable->entries;
@@ -51,9 +52,9 @@ sub expand {
 }
 
 sub run_command {
-	my ($self, $options, $command, @raw_args) = @_;
+	my ($self, $command, @args) = @_;
 	my $callback = $self->plugins->get_command($command) or Carp::croak("Command $command doesn't exist");
-	return $callback->(map { $self->expand($_, $options) } @raw_args);
+	return $callback->(@args);
 }
 
 sub add_file {
@@ -131,7 +132,7 @@ $node_sorter = sub {
 	return if $seen->{$current}++;
 	local $loop->{$current} = 1;
 	if (my $node = $self->get_node($current)) {
-		$self->$node_sorter($_, $callback, $seen, $loop) for map { $self->expand($_, {}) } $node->dependencies;
+		$self->$node_sorter($_, $callback, $seen, $loop) for map { $self->expand($_) } $node->dependencies;
 		$callback->($current, $node);
 	}
 	elsif (not -e $current) {

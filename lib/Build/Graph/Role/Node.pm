@@ -36,9 +36,9 @@ sub add_dependencies {
 
 sub run {
 	my ($self, $more) = @_;
-	my @command = @{ $self->{action} || [] } or return;
 	my %options = (target => $self->{name}, dependencies => $self->{dependendies}, source => $self->{dependencies}[0], %{$more});
-	$self->{graph}->run_command(\%options, @command) or return;
+	my @command = map { $self->{graph}->expand($_, \%options) } @{ $self->{action} || [] } or return;
+	$self->{graph}->run_command(@command) or return;
 	return;
 }
 
