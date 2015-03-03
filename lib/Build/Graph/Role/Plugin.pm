@@ -3,18 +3,28 @@ package Build::Graph::Role::Plugin;
 use strict;
 use warnings;
 
+use Scalar::Util ();
+
 sub new {
 	my ($class, %args) = @_;
-	return bless {
-		name     => $args{name} || Carp::croak('No name given'),
-		commands => $class->_get_commands(%args),
-		substs   => $class->_get_substs(%args),
+	my $self = bless {
+		name     => $args{name}  || Carp::croak('No name given'),
+		graph    => $args{graph} || Carp::croak('No graph given'),
 	}, $class;
+	$self->{commands} = $self->_get_commands(%args);
+	$self->{substs}   = $self->_get_substs(%args);
+	Scalar::Util::weaken($self->{graph});
+	return $self;
 }
 
 sub name {
 	my $self = shift;
 	return $self->{name};
+}
+
+sub graph {
+	my $self = shift;
+	return $self->{graph};
 }
 
 sub lookup_command {

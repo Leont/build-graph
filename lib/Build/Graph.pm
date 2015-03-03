@@ -188,7 +188,7 @@ sub load_plugin {
 	my ($self, $name, $module, %args) = @_;
 	(my $filename = "$module.pm") =~ s{::}{/}g;
 	require $filename;
-	my $ret = $module->new(%args, name => $name);
+	my $ret = $module->new(%args, name => $name, graph => $self);
 	$self->plugins->add_plugin($name, $ret);
 	return;
 }
