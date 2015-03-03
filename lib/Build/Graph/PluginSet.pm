@@ -9,7 +9,7 @@ sub new {
 	my ($class, %args) = @_;
 	return bless {
 		plugins  => $args{plugins} || {},
-		matchers => $args{marchers} || {},
+		matchers => $args{marchers} || [],
 	}, $class;
 }
 
@@ -30,7 +30,7 @@ sub get_subst {
 sub add_plugin {
 	my ($self, $name, $plugin) = @_;
 	$self->{plugins}{$name} = $plugin;
-	$self->_match_plugin($name, $plugin);
+	$self->_match_plugin($plugin);
 	return;
 }
 
@@ -44,22 +44,18 @@ sub to_hashref {
 }
 
 sub add_handler {
-	my ($self, $name, $callback) = @_;
-	$self->{matchers}{$name} = $callback;
+	my ($self, $callback) = @_;
+	push @{ $self->{matchers} }, $callback;
 	for my $plugin (values %{ $self->{plugins} }) {
-		if ($plugin->isa($name)) {
-			$callback->($name, $plugin);
-		}
+		$callback->($plugin);
 	}
 	return;
 }
 
 sub _match_plugin {
-	my ($self, $name, $plugin) = @_;
-	for my $matcher (keys %{ $self->{matchers} }) {
-		if ($plugin->isa($matcher)) {
-			$self->{matchers}{$matcher}->($name, $plugin);
-		}
+	my ($self, $plugin) = @_;
+	for my $matcher (@{ $self->{matchers} }) {
+		$matcher->($plugin);
 	}
 	return;
 }
