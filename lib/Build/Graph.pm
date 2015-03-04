@@ -12,12 +12,13 @@ use Build::Graph::Wildcard;
 use Build::Graph::Subst;
 use Build::Graph::Variable;
 
+use Build::Graph::PluginSet;
+
 sub new {
 	my ($class, %args) = @_;
-
 	return bless {
 		nodes        => $args{nodes}     || {},
-		plugins      => $args{plugins},
+		plugins      => $args{plugins}   || Build::Graph::PluginSet->new,
 		wildcards    => $args{wildcards} || [],
 		named        => $args{named}     || {},
 		names        => $args{names}     || [],
@@ -58,8 +59,14 @@ sub expand {
 
 sub run_command {
 	my ($self, $command, @args) = @_;
-	my $callback = $self->plugins->get_command($command) or Carp::croak("Command $command doesn't exist");
+	my $callback = $self->{plugins}->get_command($command) or Carp::croak("Command $command doesn't exist");
 	return $callback->(@args);
+}
+
+sub run_subst {
+	my ($self, $command, @args) = @_;
+	my $subst_action = $self->{plugins}->get_subst($command) or die "No such subst $command";
+	return $subst_action->(@args);
 }
 
 sub add_file {
@@ -122,12 +129,9 @@ sub add_subst {
 	return $sub;
 }
 
-sub plugins {
-	my $self = shift;
-	return $self->{plugins} ||= do {
-		require Build::Graph::PluginSet;
-		Build::Graph::PluginSet->new;
-	};
+sub add_plugin_handler {
+	my ($self, $handler) = @_;
+	return $self->{plugins}->add_handler($handler);
 }
 
 my $node_sorter;
@@ -164,7 +168,7 @@ sub to_hashref {
 	my %nodes = map { $_ => $self->get_node($_)->to_hashref } keys %{ $self->{nodes} };
 	my @named = map { $self->{named}{$_}->to_hashref } @{ $self->{names} };
 	return {
-		plugins    => $self->{plugins} ? $self->plugins->to_hashref : [],
+		plugins    => $self->{plugins} ? $self->{plugins}->to_hashref : [],
 		nodes      => \%nodes,
 		named      => \@named,
 		seen       => [ sort keys %{ $self->{seen} } ],
@@ -195,7 +199,7 @@ sub load_plugin {
 	(my $filename = "$module.pm") =~ s{::}{/}g;
 	require $filename;
 	my $ret = $module->new(%args, name => $name, graph => $self);
-	$self->plugins->add_plugin($name, $ret);
+	$self->{plugins}->add_plugin($name, $ret);
 	return;
 }
 
