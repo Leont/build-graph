@@ -12,13 +12,12 @@ use Build::Graph::Wildcard;
 use Build::Graph::Subst;
 use Build::Graph::Variable;
 
-use Build::Graph::PluginSet;
-
 sub new {
 	my ($class, %args) = @_;
 	return bless {
 		nodes        => $args{nodes}     || {},
-		plugins      => $args{plugins}   || Build::Graph::PluginSet->new,
+		plugins      => $args{plugins}   || {},
+		matchers     => $args{matchers}  || [],
 		wildcards    => $args{wildcards} || [],
 		named        => $args{named}     || {},
 		names        => $args{names}     || [],
@@ -59,13 +58,17 @@ sub expand {
 
 sub run_command {
 	my ($self, $command, @args) = @_;
-	my $callback = $self->{plugins}->get_command($command) or Carp::croak("Command $command doesn't exist");
+	my ($groupname, $subcommand) = split m{/}, $command, 2;
+	my $group = $self->{plugins}{$groupname};
+	my $callback = $group ? $group->lookup_command($subcommand, $self) : Carp::croak("Command $command doesn't exist");
 	return $callback->(@args);
 }
 
 sub run_subst {
 	my ($self, $command, @args) = @_;
-	my $subst_action = $self->{plugins}->get_subst($command) or die "No such subst $command";
+	my ($groupname, $subst) = split m{/}, $command, 2;
+	my $group = $self->{plugins}{$groupname};
+	my $subst_action = $group ? $group->lookup_subst($subst) : Carp::croak("No such subst $command");
 	return $subst_action->(@args);
 }
 
@@ -131,7 +134,11 @@ sub add_subst {
 
 sub add_plugin_handler {
 	my ($self, $handler) = @_;
-	return $self->{plugins}->add_handler($handler);
+	push @{ $self->{matchers} }, $handler;
+	for my $plugin (values %{ $self->{plugins} }) {
+		$handler->($plugin);
+	}
+	return;
 }
 
 my $node_sorter;
@@ -167,8 +174,9 @@ sub to_hashref {
 	my $self = shift;
 	my %nodes = map { $_ => $self->get_node($_)->to_hashref } keys %{ $self->{nodes} };
 	my @named = map { $self->{named}{$_}->to_hashref } @{ $self->{names} };
+	my @plugins = map { $_->serialize } values %{ $self->{plugins} };
 	return {
-		plugins    => $self->{plugins} ? $self->{plugins}->to_hashref : [],
+		plugins    => \@plugins,
 		nodes      => \%nodes,
 		named      => \@named,
 		seen       => [ sort keys %{ $self->{seen} } ],
@@ -198,8 +206,11 @@ sub load_plugin {
 	my ($self, $name, $module, %args) = @_;
 	(my $filename = "$module.pm") =~ s{::}{/}g;
 	require $filename;
-	my $ret = $module->new(%args, name => $name, graph => $self);
-	$self->{plugins}->add_plugin($name, $ret);
+	my $plugin = $module->new(%args, name => $name, graph => $self);
+	$self->{plugins}{$name} = $plugin;
+	for my $matcher (@{ $self->{matchers} }) {
+		$matcher->($plugin);
+	}
 	return;
 }
 
