@@ -100,7 +100,7 @@ sub add_wildcard {
 	push @{ $self->{wildcards} }, $wildcard;
 	$self->{named}{$name} = $wildcard;
 	push @{ $self->{names} }, $name;
-	$wildcard->match($_) for grep { !$self->{nodes}{$_}->phony } keys %{ $self->{nodes} };
+	$wildcard->match($_) for grep { $self->{nodes}{$_}->isa('Build::Graph::Node::File') } keys %{ $self->{nodes} };
 	return $wildcard;
 }
 
