@@ -30,8 +30,8 @@ sub get_node {
 	return $self->{nodes}{$key};
 }
 
-sub expand {
-	my ($self, $key, $options) = @_;
+sub _expand {
+	my ($self, $options, $key) = @_;
 	$options ||= {};
 	if ($key =~ /\A \@\( ([\w.-]+)  \) \z /xms) {
 		my $variable = $self->{named}{$1} or die "No such variable $1\n";
@@ -49,6 +49,11 @@ sub expand {
 		return {};
 	}
 	return $key;
+}
+
+sub expand {
+	my ($self, $options, @values) = @_;
+	return map { $self->_expand($options, $_) } @values;
 }
 
 sub run_command {
@@ -132,7 +137,7 @@ $node_sorter = sub {
 	return if $seen->{$current}++;
 	local $loop->{$current} = 1;
 	if (my $node = $self->get_node($current)) {
-		$self->$node_sorter($_, $callback, $seen, $loop) for map { $self->expand($_) } $node->dependencies;
+		$self->$node_sorter($_, $callback, $seen, $loop) for $self->expand({}, $node->dependencies);
 		$callback->($current, $node);
 	}
 	elsif (not -e $current) {

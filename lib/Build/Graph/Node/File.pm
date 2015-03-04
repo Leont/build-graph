@@ -16,7 +16,7 @@ sub run {
 	my $filename = $self->name;
 
 	my $graph = $self->{graph};
-	my @files = grep { $graph->get_node($_) && $graph->get_node($_)->phony || -e } map { $graph->expand($_) } $self->dependencies;
+	my @files = grep { $graph->get_node($_) && $graph->get_node($_)->phony || -e } $graph->expand({}, $self->dependencies);
 	
 	return if -e $filename and sub { -d or -M $filename <= -M or return 0 for @files; 1 }->();
 
