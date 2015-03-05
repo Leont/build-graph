@@ -101,7 +101,7 @@ sub add_wildcard {
 	$self->{named}{$name} = $wildcard;
 	push @{ $self->{names} }, $name;
 	$wildcard->match($_) for grep { $self->{nodes}{$_}->isa('Build::Graph::Node::File') } keys %{ $self->{nodes} };
-	return $wildcard;
+	return $name;
 }
 
 sub add_variable {
@@ -124,12 +124,13 @@ sub match {
 }
 
 sub add_subst {
-	my ($self, $name, $wildcard, %args) = @_;
+	my ($self, $name, $sourcename, %args) = @_;
+	my $source = $self->{named}{$sourcename};
 	my $sub = Build::Graph::Subst->new(%args, graph => $self, name => $name);
-	$wildcard->on_file($sub);
+	$source->on_file($sub);
 	$self->{named}{$name} = $sub;
 	push @{ $self->{names} }, $name;
-	return $sub;
+	return $name;
 }
 
 sub add_plugin_handler {
