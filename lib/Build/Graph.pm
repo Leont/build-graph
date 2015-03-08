@@ -20,7 +20,6 @@ sub new {
 		matchers     => $args{matchers}  || [],
 		wildcards    => $args{wildcards} || [],
 		named        => $args{named}     || {},
-		names        => $args{names}     || [],
 		seen         => $args{seen}      || {},
 	}, $class;
 }
@@ -99,7 +98,6 @@ sub add_wildcard {
 	my $wildcard = Build::Graph::Wildcard->new(%args, graph => $self, name => $name);
 	push @{ $self->{wildcards} }, $wildcard;
 	$self->{named}{$name} = $wildcard;
-	push @{ $self->{names} }, $name;
 	$wildcard->match($_) for grep { $self->{nodes}{$_}->isa('Build::Graph::Node::File') } keys %{ $self->{nodes} };
 	return $name;
 }
@@ -108,7 +106,6 @@ sub add_variable {
 	my ($self, $name, @values) = @_;
 	$self->{named}{$name} ||= Build::Graph::Variable->new(name => $name);
 	$self->{named}{$name}->add_entries(@values);
-	push @{ $self->{names} }, $name;
 	return;
 }
 
@@ -129,7 +126,6 @@ sub add_subst {
 	my $sub = Build::Graph::Subst->new(%args, graph => $self, name => $name);
 	$source->on_file($sub);
 	$self->{named}{$name} = $sub;
-	push @{ $self->{names} }, $name;
 	return $name;
 }
 
@@ -174,24 +170,33 @@ sub _sort_nodes {
 sub to_hashref {
 	my $self = shift;
 	my %nodes = map { $_ => $self->get_node($_)->to_hashref } keys %{ $self->{nodes} };
-	my @named = map { $self->{named}{$_}->to_hashref } @{ $self->{names} };
+	my %named = map { $_ => $self->{named}{$_}->to_hashref } keys %{ $self->{named} };
 	my @plugins = map { $_->serialize } values %{ $self->{plugins} };
 	return {
 		plugins    => \@plugins,
 		nodes      => \%nodes,
-		named      => \@named,
+		named      => \%named,
 		seen       => [ sort keys %{ $self->{seen} } ],
 	};
+}
+
+sub _load_named {
+	my ($self, $source, $name) = @_;
+	my $entry = $source->{$name};
+	_load_named($self, $source, $_) for grep { not $self->{named}{$_} } @{ $entry->{substs} };
+	my @substs = map { $self->{named}{$_} } @{ $entry->{substs} };
+	my $entries = $entry->{class}->new(%{$entry}, substs => \@substs, graph => $self, name => $name);
+	$self->{named}{$name} = $entries;
+	unshift @{ $self->{wildcards} }, $entries if $entries->isa('Build::Graph::Wildcard')
 }
 
 sub load {
 	my ($class, $hashref) = @_;
 	my $self = Build::Graph->new(seen => { map { $_ => 1 } @{ $hashref->{seen} } });
-	for my $named (reverse @{ $hashref->{named} }) {
-		my $entries = $named->{class}->new(%{ $named }, graph => $self);
-		$self->{named}{ $named->{name} } = $entries;
-		unshift @{ $self->{names} }, $named->{name};
-		unshift @{ $self->{wildcards} }, $entries if $entries->isa('Build::Graph::Wildcard')
+	my @matchers;
+	for my $name (keys %{ $hashref->{named} }) {
+		next if $self->{named}{$name};
+		_load_named($self, $hashref->{named}, $name);
 	}
 	for my $key (keys %{ $hashref->{nodes} }) {
 		my $value = $hashref->{nodes}{$key};
