@@ -112,7 +112,8 @@ sub add_variable {
 sub match {
 	my ($self, @names) = @_;
 	for my $name (@names) {
-		next if $self->{seen}{$name}++;
+		next if $self->{seen}{$name};
+		$self->{seen}{$name} = 1;
 		for my $wildcard (@{ $self->{wildcards} }) {
 			$wildcard->match($name);
 		}
