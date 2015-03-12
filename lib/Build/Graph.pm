@@ -32,15 +32,15 @@ sub get_node {
 sub _expand {
 	my ($self, $options, $key) = @_;
 	$options ||= {};
-	if ($key =~ /\A \@\( ([\w.-]+)  \) \z /xms) {
+	if ($key =~ / \A \@\( ([\w.-]+) \) \z /xms) {
 		my $variable = $self->{named}{$1} or die "No such variable $1\n";
 		return $variable->entries;
 	}
-	elsif ($key =~ /\A \$\( ([\w.-]+)  \) \z /xms) {
+	elsif ($key =~ / \A \$\( ([\w.-]+) \) \z /xms) {
 		my $argument = $options->{$1} or die "No such argument $1\n";
 		return $argument;
 	}
-	elsif ($key =~ /\A \%\( ([\w.,-]+)  \) \z /xms) {
+	elsif ($key =~ / \A %\( ([\w.,-]+) \) \z /xms) {
 		my @keys = grep { exists $options->{$_} } split /, ?/, $1;
 		return { map { $_ => $options->{$_} } @keys };
 	}
@@ -188,13 +188,13 @@ sub _load_named {
 	my @substs = map { $self->{named}{$_} } @{ $entry->{substs} };
 	my $entries = $entry->{class}->new(%{$entry}, substs => \@substs, graph => $self, name => $name);
 	$self->{named}{$name} = $entries;
-	unshift @{ $self->{wildcards} }, $entries if $entries->isa('Build::Graph::Wildcard')
+	unshift @{ $self->{wildcards} }, $entries if $entries->isa('Build::Graph::Wildcard');
+	return;
 }
 
 sub load {
 	my ($class, $hashref) = @_;
 	my $self = Build::Graph->new(seen => { map { $_ => 1 } @{ $hashref->{seen} } });
-	my @matchers;
 	for my $name (keys %{ $hashref->{named} }) {
 		next if $self->{named}{$name};
 		_load_named($self, $hashref->{named}, $name);

@@ -8,7 +8,7 @@ BEGIN {
 	*eq_or_diff = eval { require Test::Differences } ? \&Test::Differences::eq_or_diff : \&Test::More::is_deeply;
 }
 
-use File::Spec::Functions qw/catfile/;
+use File::Spec;
 use File::Basename qw/dirname/;
 use File::Path qw/mkpath rmtree/;
 
@@ -23,18 +23,18 @@ my $dirname = '_testing';
 END { rmtree $dirname if defined $dirname }
 $SIG{INT} = sub { rmtree $dirname; die "Interrupted!\n" };
 
-my $source1_filename = catfile($dirname, 'source1');
+my $source1_filename = File::Spec->catfile($dirname, 'source1');
 $graph->add_file($source1_filename, action => [ 'basic/spew', '$(target)', 'Hello' ]);
 
-my $source2_filename = catfile($dirname, 'source2');
+my $source2_filename = File::Spec->catfile($dirname, 'source2');
 $graph->add_file($source2_filename, action => [ 'basic/spew', '$(target)', 'World' ], dependencies => [ $source1_filename ]);
 
 my $wildcard = $graph->add_wildcard('foo-files', dir => $dirname, pattern => '*.foo');
 $graph->add_subst('bar-files', $wildcard, subst => [ 'basic/s-ext', 'foo', 'bar', '$(source)' ], action => [ 'basic/spew', '$(target)', '$(source)' ]);
 
-my $source3_foo = catfile($dirname, 'source3.foo');
+my $source3_foo = File::Spec->catfile($dirname, 'source3.foo');
 $graph->add_file($source3_foo, action => [ 'basic/spew', '$(target)', 'foo' ]);
-my $source3_bar = catfile($dirname, 'source3.bar');
+my $source3_bar = File::Spec->catfile($dirname, 'source3.bar');
 
 $graph->add_phony('build', action => [ 'basic/noop', '$(target)' ], dependencies => [ $source1_filename, $source2_filename, $source3_bar ]);
 $graph->add_phony('test', action => [ 'basic/noop', '$(target)' ], dependencies => [ 'build' ]);
@@ -104,7 +104,7 @@ for my $current ($graph, $clone) {
 				$runpart->();
 			}
 			else {
-				my @expected = map { catfile(File::Spec::Unix->splitdir($_)) } @{$runpart};
+				my @expected = map { File::Spec->catfile(File::Spec::Unix->splitdir($_)) } @{$runpart};
 				local @got;
 				$graph->run($run, verbosity => 1);
 				eq_or_diff \@got, \@expected, "\@got is @expected in run $run-$desc[$is_clone]-$count";
