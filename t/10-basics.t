@@ -60,7 +60,7 @@ my %expected = (
 		[qw{_testing/source2 build}],
 		[qw/build/],
 
-		sub { unlink $source3_foo; sleep 1 },
+		sub { unlink $source3_foo; utime 0, $^T - 1, $source3_bar },
 		[ $source3_foo, $source3_bar, 'build' ],
 		[ 'build' ],
 
@@ -68,7 +68,7 @@ my %expected = (
 		[ $source3_bar, 'build' ],
 		[ 'build' ],
 
-		sub { unlink $source1_filename; sleep 1; },
+		sub { unlink $source1_filename; utime 0, $^T - 1, $source2_filename ; },
 		[qw{_testing/source1 _testing/source2 build}],
 		[qw/build/],
 	],
