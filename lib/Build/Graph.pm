@@ -18,7 +18,6 @@ sub new {
 		nodes        => $args{nodes}     || {},
 		plugins      => $args{plugins}   || {},
 		matchers     => $args{matchers}  || [],
-		wildcards    => $args{wildcards} || [],
 		named        => $args{named}     || {},
 		seen         => $args{seen}      || {},
 	}, $class;
@@ -96,7 +95,6 @@ sub add_wildcard {
 		$args{pattern} = Text::Glob::glob_to_regex($args{pattern});
 	}
 	my $wildcard = Build::Graph::Wildcard->new(%args, graph => $self, name => $name);
-	push @{ $self->{wildcards} }, $wildcard;
 	$self->{named}{$name} = $wildcard;
 	$wildcard->match($_) for grep { $self->{nodes}{$_}->isa('Build::Graph::Node::File') } keys %{ $self->{nodes} };
 	return $name;
@@ -111,10 +109,11 @@ sub add_variable {
 
 sub match {
 	my ($self, @names) = @_;
+	my @wildcards = grep { $_->isa('Build::Graph::Wildcard') } values %{ $self->{named} };
 	for my $name (@names) {
 		next if $self->{seen}{$name};
 		$self->{seen}{$name} = 1;
-		for my $wildcard (@{ $self->{wildcards} }) {
+		for my $wildcard (@wildcards) {
 			$wildcard->match($name);
 		}
 	}
@@ -188,7 +187,6 @@ sub _load_named {
 	my @substs = map { $self->{named}{$_} } @{ $entry->{substs} };
 	my $entries = $entry->{class}->new(%{$entry}, substs => \@substs, graph => $self, name => $name);
 	$self->{named}{$name} = $entries;
-	unshift @{ $self->{wildcards} }, $entries if $entries->isa('Build::Graph::Wildcard');
 	return;
 }
 
