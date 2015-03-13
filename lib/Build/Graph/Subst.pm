@@ -31,7 +31,8 @@ sub process {
 sub to_hashref {
 	my $self = shift;
 	my $ret = $self->SUPER::to_hashref;
-	@{$ret}{qw/subst action dependencies/} = @{$self}{qw/subst action dependencies/};
+	@{$ret}{qw/subst action/} = @{$self}{qw/subst action/};
+	$ret->{dependencies} = $self->{dependencies} if @{ $self->{dependencies} };
 	return $ret;
 }
 

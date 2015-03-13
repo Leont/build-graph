@@ -34,11 +34,11 @@ sub on_file {
 
 sub to_hashref {
 	my $self = shift;
-	return {
-		entries => $self->{entries},
-		class => ref($self),
-		substs  => [ map { $_->{name} } @{ $self->{substs} } ],
-	};
+	my %ret;
+	$ret{class}   = ref $self;
+	$ret{entries} = $self->{entries} if @{ $self->{entries} };
+	$ret{substs}  = [ map { $_->{name} } @{ $self->{substs} } ] if @{ $self->{substs} };
+	return \%ret;
 }
 
 1;
