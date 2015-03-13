@@ -5,12 +5,6 @@ use warnings;
 
 use parent 'Build::Graph::Role::Node';
 
-sub new {
-	my ($class, %args) = @_;
-	my $self = $class->SUPER::new(%args);
-	return $self;
-}
-
 sub run {
 	my ($self, $options) = @_;
 	my $filename = $self->name;
