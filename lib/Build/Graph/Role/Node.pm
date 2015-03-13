@@ -45,7 +45,8 @@ sub run {
 sub to_hashref {
 	my $self         = shift;
 	my @dependencies = $self->dependencies;
-	my %ret          = (class => ref $self);
+	my %ret;
+	$ret{type}         = lc +(ref($self) =~ /^Build::Graph::Node::(\w+)$/)[0];
 	$ret{dependencies} = \@dependencies  if @dependencies;
 	$ret{action}       = $self->{action} if $self->{action};
 	return \%ret;

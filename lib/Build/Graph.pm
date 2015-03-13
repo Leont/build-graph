@@ -185,7 +185,8 @@ sub _load_named {
 	my $entry = $source->{$name};
 	_load_named($self, $source, $_) for grep { not $self->{named}{$_} } @{ $entry->{substs} };
 	my @substs = map { $self->{named}{$_} } @{ $entry->{substs} };
-	my $entries = $entry->{class}->new(%{$entry}, substs => \@substs, graph => $self, name => $name);
+	my $class = "Build::Graph::\u$entry->{type}";
+	my $entries = $class->new(%{$entry}, substs => \@substs, graph => $self, name => $name);
 	$self->{named}{$name} = $entries;
 	return;
 }
@@ -199,7 +200,8 @@ sub load {
 	}
 	for my $key (keys %{ $hashref->{nodes} }) {
 		my $value = $hashref->{nodes}{$key};
-		$self->{nodes}{$key} = $value->{class}->new(%{$value}, name => $key, graph => $self);
+		my $class = "Build::Graph::Node::\u$value->{type}";
+		$self->{nodes}{$key} = $class->new(%{$value}, name => $key, graph => $self);
 	}
 	for my $plugin (@{ $hashref->{plugins} }) {
 		$self->load_plugin($plugin->{name}, $plugin->{module});

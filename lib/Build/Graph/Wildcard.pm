@@ -53,7 +53,7 @@ sub to_hashref {
 	my $self = shift;
 	my $ret = $self->SUPER::to_hashref;
 	($ret->{pattern}) = $self->{pattern} =~ / \A $before (.*) $after \z /xms;
-	$ret->{dir}     = $self->{dir};
+	$ret->{dir}  = $self->{dir};
 	return $ret;
 }
 

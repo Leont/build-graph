@@ -35,7 +35,7 @@ sub on_file {
 sub to_hashref {
 	my $self = shift;
 	my %ret;
-	$ret{class}   = ref $self;
+	$ret{type}    = lc +(ref($self) =~ /^Build::Graph::(\w+)$/)[0];
 	$ret{entries} = $self->{entries} if @{ $self->{entries} };
 	$ret{substs}  = [ map { $_->{name} } @{ $self->{substs} } ] if @{ $self->{substs} };
 	return \%ret;
