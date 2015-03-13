@@ -9,10 +9,10 @@ use Scalar::Util ();
 sub new {
 	my ($class, %args) = @_;
 	my $self = bless {
-		name         => $args{name} || Carp::croak('No name given'),
-		graph        => $args{graph},
-		entries      => $args{entries} || [],
-		substs       => $args{substs} || [],
+		graph   => $args{graph},
+		name    => $args{name}    || Carp::croak('No name given'),
+		entries => $args{entries} || [],
+		substs  => $args{substs}  || [],
 	}, $class;
 	Scalar::Util::weaken($self->{graph});
 	return $self;

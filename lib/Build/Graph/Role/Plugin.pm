@@ -8,8 +8,8 @@ use Scalar::Util ();
 sub new {
 	my ($class, %args) = @_;
 	my $self = bless {
-		name     => $args{name}  || Carp::croak('No name given'),
-		graph    => $args{graph} || Carp::croak('No graph given'),
+		name  => $args{name}  || Carp::croak('No name given'),
+		graph => $args{graph} || Carp::croak('No graph given'),
 	}, $class;
 	$self->{commands} = $self->_get_commands(%args);
 	$self->{substs}   = $self->_get_substs(%args);

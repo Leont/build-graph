@@ -15,11 +15,11 @@ use Build::Graph::Variable;
 sub new {
 	my ($class, %args) = @_;
 	return bless {
-		nodes        => $args{nodes}     || {},
-		plugins      => $args{plugins}   || {},
-		matchers     => $args{matchers}  || [],
-		named        => $args{named}     || {},
-		seen         => $args{seen}      || {},
+		nodes    => $args{nodes}    || {},
+		plugins  => $args{plugins}  || {},
+		matchers => $args{matchers} || [],
+		named    => $args{named}    || {},
+		seen     => $args{seen}     || {},
 	}, $class;
 }
 
@@ -168,15 +168,15 @@ sub _sort_nodes {
 }
 
 sub to_hashref {
-	my $self = shift;
-	my %nodes = map { $_ => $self->get_node($_)->to_hashref } keys %{ $self->{nodes} };
-	my %named = map { $_ => $self->{named}{$_}->to_hashref } keys %{ $self->{named} };
+	my $self    = shift;
+	my %nodes   = map { $_ => $self->get_node($_)->to_hashref } keys %{ $self->{nodes} };
+	my %named   = map { $_ => $self->{named}{$_}->to_hashref } keys %{ $self->{named} };
 	my @plugins = map { $_->serialize } values %{ $self->{plugins} };
 	return {
-		plugins    => \@plugins,
-		nodes      => \%nodes,
-		named      => \%named,
-		seen       => [ sort keys %{ $self->{seen} } ],
+		plugins => \@plugins,
+		nodes   => \%nodes,
+		named   => \%named,
+		seen    => [ sort keys %{ $self->{seen} } ],
 	};
 }
 
@@ -184,8 +184,8 @@ sub _load_named {
 	my ($self, $source, $name) = @_;
 	my $entry = $source->{$name};
 	_load_named($self, $source, $_) for grep { not $self->{named}{$_} } @{ $entry->{substs} };
-	my @substs = map { $self->{named}{$_} } @{ $entry->{substs} };
-	my $class = "Build::Graph::\u$entry->{type}";
+	my @substs  = map { $self->{named}{$_} } @{ $entry->{substs} };
+	my $class   = "Build::Graph::\u$entry->{type}";
 	my $entries = $class->new(%{$entry}, substs => \@substs, graph => $self, name => $name);
 	$self->{named}{$name} = $entries;
 	return;
