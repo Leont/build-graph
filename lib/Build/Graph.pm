@@ -8,9 +8,9 @@ use Carp qw//;
 use Build::Graph::Node::File;
 use Build::Graph::Node::Phony;
 
-use Build::Graph::Wildcard;
-use Build::Graph::Subst;
-use Build::Graph::Variable;
+use Build::Graph::Entry::Wildcard;
+use Build::Graph::Entry::Subst;
+use Build::Graph::Entry::Variable;
 
 sub new {
 	my ($class, %args) = @_;
@@ -94,7 +94,7 @@ sub add_wildcard {
 		require Text::Glob;
 		$args{pattern} = Text::Glob::glob_to_regex($args{pattern});
 	}
-	my $wildcard = Build::Graph::Wildcard->new(%args, graph => $self, name => $name);
+	my $wildcard = Build::Graph::Entry::Wildcard->new(%args, graph => $self, name => $name);
 	$self->{named}{$name} = $wildcard;
 	$wildcard->match($_) for grep { $self->{nodes}{$_}->isa('Build::Graph::Node::File') } keys %{ $self->{nodes} };
 	return $name;
@@ -102,14 +102,14 @@ sub add_wildcard {
 
 sub add_variable {
 	my ($self, $name, @values) = @_;
-	$self->{named}{$name} ||= Build::Graph::Variable->new(name => $name);
+	$self->{named}{$name} ||= Build::Graph::Entry::Variable->new(name => $name);
 	$self->{named}{$name}->add_entries(@values);
 	return;
 }
 
 sub match {
 	my ($self, @names) = @_;
-	my @wildcards = grep { $_->isa('Build::Graph::Wildcard') } values %{ $self->{named} };
+	my @wildcards = grep { $_->isa('Build::Graph::Entry::Wildcard') } values %{ $self->{named} };
 	for my $name (@names) {
 		next if $self->{seen}{$name};
 		$self->{seen}{$name} = 1;
@@ -123,7 +123,7 @@ sub match {
 sub add_subst {
 	my ($self, $name, $sourcename, %args) = @_;
 	my $source = $self->{named}{$sourcename};
-	my $sub = Build::Graph::Subst->new(%args, graph => $self, name => $name);
+	my $sub = Build::Graph::Entry::Subst->new(%args, graph => $self, name => $name);
 	$source->on_file($sub);
 	$self->{named}{$name} = $sub;
 	return $name;
@@ -185,7 +185,7 @@ sub _load_named {
 	my $entry = $source->{$name};
 	_load_named($self, $source, $_) for grep { not $self->{named}{$_} } @{ $entry->{substs} };
 	my @substs  = map { $self->{named}{$_} } @{ $entry->{substs} };
-	my $class   = "Build::Graph::\u$entry->{type}";
+	my $class   = "Build::Graph::Entry::\u$entry->{type}";
 	my $entries = $class->new(%{$entry}, substs => \@substs, graph => $self, name => $name);
 	$self->{named}{$name} = $entries;
 	return;

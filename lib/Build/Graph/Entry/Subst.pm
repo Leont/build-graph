@@ -1,4 +1,4 @@
-package Build::Graph::Subst;
+package Build::Graph::Entry::Subst;
 
 use strict;
 use warnings;

@@ -1,4 +1,4 @@
-package Build::Graph::Variable;
+package Build::Graph::Entry::Variable;
 
 use strict;
 use warnings;

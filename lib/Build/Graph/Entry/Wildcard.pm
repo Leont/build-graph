@@ -1,4 +1,4 @@
-package Build::Graph::Wildcard;
+package Build::Graph::Entry::Wildcard;
 
 use strict;
 use warnings;
