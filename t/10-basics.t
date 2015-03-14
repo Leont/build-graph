@@ -106,7 +106,7 @@ for my $current ($graph, $clone) {
 			else {
 				my @expected = map { File::Spec->catfile(File::Spec::Unix->splitdir($_)) } @{$runpart};
 				local @got;
-				$graph->run($run, verbosity => 1);
+				$current->run($run, verbosity => 1);
 				eq_or_diff \@got, \@expected, "\@got is @expected in run $run-$desc[$is_clone]-$count";
 				$count++;
 			}
