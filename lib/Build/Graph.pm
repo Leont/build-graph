@@ -87,6 +87,7 @@ sub _add_node {
 	my $node = "Build::Graph::Node::$type"->new(%args, name => $name, graph => $self);
 	$self->{nodes}{$name} = $node;
 	$self->match($name);
+	$self->add_variable($args{add_to}, $name) if $args{add_to};
 	return $name;
 }
 
