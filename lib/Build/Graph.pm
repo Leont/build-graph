@@ -72,7 +72,9 @@ sub run_subst {
 
 sub add_file {
 	my ($self, $name, %args) = @_;
-	return $self->_add_node($name, %args, type => 'File');
+	my $ret = $self->_add_node($name, %args, type => 'File');
+	$self->match($name);
+	return $ret;
 }
 
 sub add_phony {
@@ -86,7 +88,6 @@ sub _add_node {
 	Carp::croak("$type '$name' already exists in database") if !$args{override} && exists $self->{nodes}{$name};
 	my $node = "Build::Graph::Node::$type"->new(%args, name => $name, graph => $self);
 	$self->{nodes}{$name} = $node;
-	$self->match($name);
 	$self->add_variable($args{add_to}, $name) if $args{add_to};
 	return $name;
 }
