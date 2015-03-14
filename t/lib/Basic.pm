@@ -10,7 +10,7 @@ use Carp qw/croak/;
 use File::Path 'mkpath';
 use File::Basename 'dirname';
 
-sub _get_commands {
+sub get_commands {
 	my ($class, %args) = @_;
 	return {
 		'spew' => sub { my ($target, $source) = @_; $args{next_is}->($target); spew($target, $source) },
@@ -18,7 +18,7 @@ sub _get_commands {
 	};
 }
 
-sub _get_substs {
+sub get_substs {
 	return {
 		's-ext' => sub {
 			my ($orig, $repl, $source) = @_;
