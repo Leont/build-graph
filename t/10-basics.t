@@ -17,7 +17,7 @@ use Build::Graph;
 use lib 't/lib';
 
 my $graph = Build::Graph->new;
-$graph->load_plugin(basic => 'Basic', next_is => \&next_is);
+$graph->load_plugin(basic => 'Basic', next_is => 'main::next_is');
 
 my $dirname = '_testing';
 END { rmtree $dirname if defined $dirname }
@@ -114,7 +114,7 @@ for my $current ($graph, $clone) {
 	}
 	$is_clone++;
 }
-delete $_->{plugins} for $clone, $graph;
+#delete $_->{plugins} for $clone, $graph;
 
 is_deeply($clone, $graph, 'Clone deeply equals original (mostly)');
 
