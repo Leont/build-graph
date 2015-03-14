@@ -43,7 +43,7 @@ sub get_substs {
 	return {};
 }
 
-sub serialize {
+sub to_hashref {
 	my $self = shift;
 	return {
 		module => ref($self),

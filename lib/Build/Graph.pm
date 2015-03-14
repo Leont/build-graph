@@ -174,7 +174,7 @@ sub to_hashref {
 	my $self    = shift;
 	my %nodes   = map { $_ => $self->get_node($_)->to_hashref } keys %{ $self->{nodes} };
 	my %named   = map { $_ => $self->{named}{$_}->to_hashref } keys %{ $self->{named} };
-	my @plugins = map { $_->serialize } values %{ $self->{plugins} };
+	my @plugins = map { $_->to_hashref } values %{ $self->{plugins} };
 	return {
 		plugins => \@plugins,
 		nodes   => \%nodes,
@@ -207,7 +207,7 @@ sub load {
 		$self->{nodes}{$key} = $class->new(%{$value}, name => $key, graph => $self);
 	}
 	for my $plugin (@{ $hashref->{plugins} }) {
-		$self->load_plugin($plugin->{name}, $plugin->{module});
+		$self->load_plugin($plugin->{name}, $plugin->{module}, %{$plugin});
 	}
 	return $self;
 }
