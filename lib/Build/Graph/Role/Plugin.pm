@@ -29,12 +29,7 @@ sub graph {
 
 sub lookup_command {
 	my ($self, $name, $plugins) = @_;
-	my $raw = $self->{commands}{$name};
-	if (ref($raw) eq 'ARRAY') {
-		my @commands = map { $plugins->get_command($_) } @{$raw};
-		return sub { $_->(@_) for @commands };
-	}
-	return $raw;
+	return $self->{commands}{$name};
 }
 
 sub lookup_subst {
