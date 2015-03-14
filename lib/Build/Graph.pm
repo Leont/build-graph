@@ -72,17 +72,19 @@ sub run_subst {
 
 sub add_file {
 	my ($self, $name, %args) = @_;
-	Carp::croak("File '$name' already exists in database") if !$args{override} && exists $self->{nodes}{$name};
-	my $node = Build::Graph::Node::File->new(%args, name => $name, graph => $self);
-	$self->{nodes}{$name} = $node;
-	$self->match($name);
-	return $name;
+	return $self->_add_node($name, %args, type => 'File');
 }
 
 sub add_phony {
 	my ($self, $name, %args) = @_;
-	Carp::croak("Phony '$name' already exists in database") if !$args{override} && exists $self->{nodes}{$name};
-	my $node = Build::Graph::Node::Phony->new(%args, name => $name, graph => $self);
+	return $self->_add_node($name, %args, type => 'Phony');
+}
+
+sub _add_node {
+	my ($self, $name, %args) = @_;
+	my $type = delete $args{type};
+	Carp::croak("$type '$name' already exists in database") if !$args{override} && exists $self->{nodes}{$name};
+	my $node = "Build::Graph::Node::$type"->new(%args, name => $name, graph => $self);
 	$self->{nodes}{$name} = $node;
 	$self->match($name);
 	return $name;
