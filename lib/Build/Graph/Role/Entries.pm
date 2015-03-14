@@ -32,6 +32,16 @@ sub on_file {
 	return;
 }
 
+sub trigger {
+	my ($self, @entries) = @_;
+	for my $entry (@entries) {
+		for my $subst (@{ $self->{substs} }) {
+			$subst->process($entry);
+		}
+	}
+	return;
+}
+
 sub to_hashref {
 	my $self = shift;
 	my %ret;

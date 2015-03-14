@@ -23,7 +23,7 @@ sub process {
 	my $target = $self->{graph}->run_subst(@command);
 
 	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} } ], action => $self->{action});
-	$_->process($target) for @{ $self->{substs} };
+	$self->trigger($target);
 	push @{ $self->{entries} }, $target;
 	return $target;
 }

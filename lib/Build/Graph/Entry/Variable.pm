@@ -8,6 +8,7 @@ use parent 'Build::Graph::Role::Entries';
 sub add_entries {
 	my ($self, @entries) = @_;
 	push @{ $self->{entries} }, @entries;
+	$self->trigger(@entries);
 	return;
 }
 

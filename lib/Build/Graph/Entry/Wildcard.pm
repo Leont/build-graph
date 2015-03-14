@@ -42,7 +42,7 @@ sub match {
 	my ($self, $filename) = @_;
 	if ($self->_dir_matches($filename) && _match_filename($filename, $self->{pattern})) {
 		push @{ $self->{entries} }, $filename;
-		$_->process($filename) for @{ $self->{substs} };
+		$self->trigger($filename);
 	}
 	return;
 }
