@@ -19,7 +19,6 @@ sub new {
 		plugins  => $args{plugins}  || {},
 		matchers => $args{matchers} || [],
 		named    => $args{named}    || {},
-		seen     => $args{seen}     || {},
 	}, $class;
 }
 
@@ -115,8 +114,6 @@ sub match {
 	my ($self, @names) = @_;
 	my @wildcards = grep { $_->isa('Build::Graph::Entry::Wildcard') } values %{ $self->{named} };
 	for my $name (@names) {
-		next if $self->{seen}{$name};
-		$self->{seen}{$name} = 1;
 		for my $wildcard (@wildcards) {
 			$wildcard->match($name);
 		}
@@ -180,7 +177,6 @@ sub to_hashref {
 		plugins => \@plugins,
 		nodes   => \%nodes,
 		named   => \%named,
-		seen    => [ sort keys %{ $self->{seen} } ],
 	};
 }
 
@@ -197,7 +193,7 @@ sub _load_named {
 
 sub load {
 	my ($class, $hashref) = @_;
-	my $self = Build::Graph->new(seen => { map { $_ => 1 } @{ $hashref->{seen} } });
+	my $self = Build::Graph->new;
 	for my $name (keys %{ $hashref->{named} }) {
 		next if $self->{named}{$name};
 		_load_named($self, $hashref->{named}, $name);
