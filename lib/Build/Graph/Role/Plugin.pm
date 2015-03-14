@@ -11,8 +11,6 @@ sub new {
 		name  => $args{name}  || Carp::croak('No name given'),
 		graph => $args{graph} || Carp::croak('No graph given'),
 	}, $class;
-	$self->{commands} = $self->get_commands(%args);
-	$self->{substs}   = $self->get_substs(%args);
 	Scalar::Util::weaken($self->{graph});
 	return $self;
 }
@@ -29,12 +27,12 @@ sub graph {
 
 sub lookup_command {
 	my ($self, $name, $plugins) = @_;
-	return $self->{commands}{$name};
+	return $self->get_commands->{$name};
 }
 
 sub lookup_subst {
 	my ($self, $name) = @_;
-	return $self->{substs}{$name};
+	return $self->get_substs->{$name};
 }
 
 sub get_commands {
