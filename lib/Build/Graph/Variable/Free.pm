@@ -1,9 +1,9 @@
-package Build::Graph::Entry::Variable;
+package Build::Graph::Variable::Free;
 
 use strict;
 use warnings;
 
-use parent 'Build::Graph::Role::Entries';
+use parent 'Build::Graph::Role::Variable';
 
 sub add_entries {
 	my ($self, @entries) = @_;

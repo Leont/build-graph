@@ -1,9 +1,9 @@
-package Build::Graph::Entry::Wildcard;
+package Build::Graph::Variable::Wildcard;
 
 use strict;
 use warnings;
 
-use parent 'Build::Graph::Role::Entries';
+use parent 'Build::Graph::Role::Variable';
 
 use Carp ();
 

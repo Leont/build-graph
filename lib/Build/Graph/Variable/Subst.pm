@@ -1,9 +1,9 @@
-package Build::Graph::Entry::Subst;
+package Build::Graph::Variable::Subst;
 
 use strict;
 use warnings;
 
-use parent 'Build::Graph::Role::Entries';
+use parent 'Build::Graph::Role::Variable';
 
 use Carp ();
 

@@ -8,17 +8,17 @@ use Carp qw//;
 use Build::Graph::Node::File;
 use Build::Graph::Node::Phony;
 
-use Build::Graph::Entry::Wildcard;
-use Build::Graph::Entry::Subst;
-use Build::Graph::Entry::Variable;
+use Build::Graph::Variable::Wildcard;
+use Build::Graph::Variable::Subst;
+use Build::Graph::Variable::Free;
 
 sub new {
 	my ($class, %args) = @_;
 	return bless {
-		nodes    => $args{nodes}    || {},
-		plugins  => $args{plugins}  || {},
-		matchers => $args{matchers} || [],
-		named    => $args{named}    || {},
+		nodes     => $args{nodes}     || {},
+		plugins   => $args{plugins}   || {},
+		matchers  => $args{matchers}  || [],
+		variables => $args{variables} || {},
 	}, $class;
 }
 
@@ -26,7 +26,7 @@ sub _expand {
 	my ($self, $options, $key) = @_;
 	$options ||= {};
 	if ($key =~ / \A \@\( ([\w.-]+) \) \z /xms) {
-		my $variable = $self->{named}{$1} or die "No such variable $1\n";
+		my $variable = $self->{variables}{$1} or die "No such variable $1\n";
 		return $variable->entries;
 	}
 	elsif ($key =~ / \A \$\( ([\w.-]+) \) \z /xms) {
@@ -96,22 +96,22 @@ sub add_wildcard {
 		require Text::Glob;
 		$args{pattern} = Text::Glob::glob_to_regex($args{pattern});
 	}
-	my $wildcard = Build::Graph::Entry::Wildcard->new(%args, graph => $self, name => $name);
-	$self->{named}{$name} = $wildcard;
+	my $wildcard = Build::Graph::Variable::Wildcard->new(%args, graph => $self, name => $name);
+	$self->{variables}{$name} = $wildcard;
 	$wildcard->match($_) for grep { $self->{nodes}{$_}->isa('Build::Graph::Node::File') } keys %{ $self->{nodes} };
 	return;
 }
 
 sub add_variable {
 	my ($self, $name, @values) = @_;
-	$self->{named}{$name} ||= Build::Graph::Entry::Variable->new(name => $name);
-	$self->{named}{$name}->add_entries(@values);
+	$self->{variables}{$name} ||= Build::Graph::Variable::Free->new(name => $name);
+	$self->{variables}{$name}->add_entries(@values);
 	return;
 }
 
 sub match {
 	my ($self, @names) = @_;
-	my @wildcards = grep { $_->isa('Build::Graph::Entry::Wildcard') } values %{ $self->{named} };
+	my @wildcards = grep { $_->isa('Build::Graph::Variable::Wildcard') } values %{ $self->{variables} };
 	for my $name (@names) {
 		for my $wildcard (@wildcards) {
 			$wildcard->match($name);
@@ -122,10 +122,10 @@ sub match {
 
 sub add_subst {
 	my ($self, $name, $sourcename, %args) = @_;
-	my $source = $self->{named}{$sourcename};
-	my $sub = Build::Graph::Entry::Subst->new(%args, graph => $self, name => $name);
+	my $source = $self->{variables}{$sourcename};
+	my $sub = Build::Graph::Variable::Subst->new(%args, graph => $self, name => $name);
 	$source->on_file($sub);
-	$self->{named}{$name} = $sub;
+	$self->{variables}{$name} = $sub;
 	return;
 }
 
@@ -168,34 +168,34 @@ sub _sort_nodes {
 }
 
 sub to_hashref {
-	my $self    = shift;
-	my %nodes   = map { $_ => $self->get_node($_)->to_hashref } keys %{ $self->{nodes} };
-	my %named   = map { $_ => $self->{named}{$_}->to_hashref } keys %{ $self->{named} };
-	my @plugins = map { $_->to_hashref } values %{ $self->{plugins} };
+	my $self      = shift;
+	my %nodes     = map { $_ => $self->get_node($_)->to_hashref } keys %{ $self->{nodes} };
+	my %variables = map { $_ => $self->{variables}{$_}->to_hashref } keys %{ $self->{variables} };
+	my @plugins   = map { $_->to_hashref } values %{ $self->{plugins} };
 	return {
-		plugins => \@plugins,
-		nodes   => \%nodes,
-		named   => \%named,
+		plugins   => \@plugins,
+		nodes     => \%nodes,
+		variables => \%variables,
 	};
 }
 
-sub _load_named {
+sub _load_variables {
 	my ($self, $source, $name) = @_;
 	my $entry = $source->{$name};
-	_load_named($self, $source, $_) for grep { not $self->{named}{$_} } @{ $entry->{substs} };
-	my @substs  = map { $self->{named}{$_} } @{ $entry->{substs} };
-	my $class   = "Build::Graph::Entry::\u$entry->{type}";
+	_load_variables($self, $source, $_) for grep { not $self->{variables}{$_} } @{ $entry->{substs} };
+	my @substs  = map { $self->{variables}{$_} } @{ $entry->{substs} };
+	my $class   = "Build::Graph::Variable::\u$entry->{type}";
 	my $entries = $class->new(%{$entry}, substs => \@substs, graph => $self, name => $name);
-	$self->{named}{$name} = $entries;
+	$self->{variables}{$name} = $entries;
 	return;
 }
 
 sub load {
 	my ($class, $hashref) = @_;
 	my $self = Build::Graph->new;
-	for my $name (keys %{ $hashref->{named} }) {
-		next if $self->{named}{$name};
-		_load_named($self, $hashref->{named}, $name);
+	for my $name (keys %{ $hashref->{variables} }) {
+		next if $self->{variables}{$name};
+		_load_variables($self, $hashref->{variables}, $name);
 	}
 	for my $key (keys %{ $hashref->{nodes} }) {
 		my $value = $hashref->{nodes}{$key};
