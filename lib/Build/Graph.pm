@@ -23,29 +23,24 @@ sub new {
 }
 
 sub _expand {
-	my ($self, $options, $key) = @_;
-	$options ||= {};
-	if ($key =~ / \A \@\( ([\w.-]+) \) \z /xms) {
-		my $variable = $self->{variables}{$1} or die "No such variable $1\n";
-		return $variable->entries;
+	my ($self, $options, $key, $count) = @_;
+	Carp::croak("Deep variable recursion detected involving $key") if $count > 20;
+	if ($key =~ / \A \@\( ([\w.-]+) \) \z /xm) {
+		my $variable = $self->{variables}{$1} or Carp::croak("No such variable $1");
+		return map { $self->_expand($options, $_, $count + 1) } $variable->entries;
 	}
-	elsif ($key =~ / \A \$\( ([\w.-]+) \) \z /xms) {
-		my $argument = $options->{$1} or die "No such argument $1\n";
-		return $argument;
-	}
-	elsif ($key =~ / \A %\( ([\w.,-]+) \) \z /xms) {
-		my @keys = grep { exists $options->{$_} } split /, ?/, $1;
+	elsif ($key =~ / \A %\( ([\w.,-]+) \) \z /xm) {
+		my @keys = grep { exists $options->{$_} } split /,/, $1;
 		return { map { $_ => $options->{$_} } @keys };
 	}
-	elsif ($key eq '{}') {
-		return {};
-	}
+	$key =~ s/ \$\( ([\w.-]+) \) / $self->_expand($options, $options->{$1} || Carp::croak("No such argument $1"), $count + 1) /gex;
+
 	return $key;
 }
 
 sub expand {
 	my ($self, $options, @values) = @_;
-	return map { $self->_expand($options, $_) } @values;
+	return map { $self->_expand($options, $_, 1) } @values;
 }
 
 sub run_command {
