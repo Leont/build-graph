@@ -22,11 +22,6 @@ sub new {
 	}, $class;
 }
 
-sub get_node {
-	my ($self, $key) = @_;
-	return $self->{nodes}{$key};
-}
-
 sub _expand {
 	my ($self, $options, $key) = @_;
 	$options ||= {};
@@ -57,7 +52,7 @@ sub run_command {
 	my ($self, $command, @args) = @_;
 	my ($groupname, $subcommand) = split m{/}, $command, 2;
 	my $group = $self->{plugins}{$groupname};
-	my $callback = $group ? $group->lookup_command($subcommand, $self) : Carp::croak("Command $command doesn't exist");
+	my $callback = $group ? $group->lookup_command($subcommand, $self) : Carp::croak("No such command $command");
 	return $callback->(@args);
 }
 
@@ -67,6 +62,11 @@ sub run_subst {
 	my $group = $self->{plugins}{$groupname};
 	my $subst_action = $group ? $group->lookup_subst($subst) : Carp::croak("No such subst $command");
 	return $subst_action->(@args);
+}
+
+sub get_node {
+	my ($self, $key) = @_;
+	return $self->{nodes}{$key};
 }
 
 sub add_file {
@@ -85,8 +85,7 @@ sub _add_node {
 	my ($self, $name, %args) = @_;
 	my $type = delete $args{type};
 	Carp::croak("$type '$name' already exists in database") if !$args{override} && exists $self->{nodes}{$name};
-	my $node = "Build::Graph::Node::$type"->new(%args, name => $name, graph => $self);
-	$self->{nodes}{$name} = $node;
+	$self->{nodes}{$name} = "Build::Graph::Node::$type"->new(%args, name => $name, graph => $self);;
 	$self->add_variable($args{add_to}, $name) if $args{add_to};
 	return $name;
 }
@@ -100,7 +99,7 @@ sub add_wildcard {
 	my $wildcard = Build::Graph::Entry::Wildcard->new(%args, graph => $self, name => $name);
 	$self->{named}{$name} = $wildcard;
 	$wildcard->match($_) for grep { $self->{nodes}{$_}->isa('Build::Graph::Node::File') } keys %{ $self->{nodes} };
-	return $name;
+	return;
 }
 
 sub add_variable {
@@ -127,7 +126,7 @@ sub add_subst {
 	my $sub = Build::Graph::Entry::Subst->new(%args, graph => $self, name => $name);
 	$source->on_file($sub);
 	$self->{named}{$name} = $sub;
-	return $name;
+	return;
 }
 
 sub add_plugin_handler {

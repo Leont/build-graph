@@ -11,6 +11,7 @@ BEGIN {
 use File::Spec;
 use File::Basename qw/dirname/;
 use File::Path qw/mkpath rmtree/;
+use File::Temp 'tempdir';
 
 use Build::Graph;
 
@@ -19,30 +20,30 @@ use lib 't/lib';
 my $graph = Build::Graph->new;
 $graph->load_plugin(basic => 'Basic', next_is => 'main::next_is');
 
-my $dirname = '_testing';
+my $dirname = tempdir(CLEANUP => 1);
 END { rmtree $dirname if defined $dirname }
 $SIG{INT} = sub { rmtree $dirname; die "Interrupted!\n" };
 
-my $source1_filename = File::Spec->catfile($dirname, 'source1');
-$graph->add_file($source1_filename, action => [ 'basic/spew', '$(target)', 'Hello' ]);
+my $source1 = File::Spec->catfile($dirname, 'source1');
+$graph->add_file($source1, action => [ 'basic/spew', '$(target)', 'Hello' ]);
 
-my $source2_filename = File::Spec->catfile($dirname, 'source2');
-$graph->add_file($source2_filename, action => [ 'basic/spew', '$(target)', 'World' ], dependencies => [ $source1_filename ]);
+my $source2 = File::Spec->catfile($dirname, 'source2');
+$graph->add_file($source2, action => [ 'basic/spew', '$(target)', 'World' ], dependencies => [ $source1 ]);
 
-my $wildcard = $graph->add_wildcard('foo-files', dir => $dirname, pattern => '*.foo');
-$graph->add_subst('bar-files', $wildcard, subst => [ 'basic/s-ext', 'foo', 'bar', '$(source)' ], action => [ 'basic/spew', '$(target)', '$(source)' ]);
+$graph->add_wildcard('foo-files', dir => $dirname, pattern => '*.foo');
+$graph->add_subst('bar-files', 'foo-files', subst => [ 'basic/s-ext', 'foo', 'bar', '$(source)' ], action => [ 'basic/spew', '$(target)', '$(source)' ]);
 
 my $source3_foo = File::Spec->catfile($dirname, 'source3.foo');
 $graph->add_file($source3_foo, action => [ 'basic/spew', '$(target)', 'foo' ]);
 my $source3_bar = File::Spec->catfile($dirname, 'source3.bar');
 
-$graph->add_phony('build', action => [ 'basic/noop', '$(target)' ], dependencies => [ $source1_filename, $source2_filename, $source3_bar ]);
+$graph->add_phony('build', action => [ 'basic/noop', '$(target)' ], dependencies => [ $source1, $source2, $source3_bar ]);
 $graph->add_phony('test', action => [ 'basic/noop', '$(target)' ], dependencies => [ 'build' ]);
 $graph->add_phony('install', action => [ 'basic/noop', '$(target)' ], dependencies => [ 'build' ]);
 
 my @sorted = $graph->_sort_nodes('build');
 
-my @full = ($source1_filename, $source2_filename, $source3_foo, $source3_bar, 'build');
+my @full = ($source1, $source2, $source3_foo, $source3_bar, 'build');
 
 eq_or_diff(\@sorted, \@full, 'topological sort is ok');
 
@@ -56,8 +57,8 @@ my %expected = (
 		[ @full ],
 		[qw/build/],
 
-		sub { unlink $source2_filename or die "Couldn't remove $source2_filename: $!" },
-		[qw{_testing/source2 build}],
+		sub { unlink $source2 or die "Couldn't remove $source2: $!" },
+		[ $source2, 'build'],
 		[qw/build/],
 
 		sub { unlink $source3_foo; utime 0, $^T - 1, $source3_bar },
@@ -68,8 +69,8 @@ my %expected = (
 		[ $source3_bar, 'build' ],
 		[ 'build' ],
 
-		sub { unlink $source1_filename; utime 0, $^T - 1, $source2_filename ; },
-		[qw{_testing/source1 _testing/source2 build}],
+		sub { unlink $source1; utime 0, $^T - 1, $source2 ; },
+		[ $source1, $source2, 'build'],
 		[qw/build/],
 	],
 	test    => [

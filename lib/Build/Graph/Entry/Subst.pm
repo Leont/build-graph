@@ -23,9 +23,9 @@ sub process {
 	my $target = $self->{graph}->run_subst(@command);
 
 	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} } ], action => $self->{action});
-	$self->trigger($target);
 	push @{ $self->{entries} }, $target;
-	return $target;
+	$self->trigger($target);
+	return;
 }
 
 sub to_hashref {
