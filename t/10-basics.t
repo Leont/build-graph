@@ -18,28 +18,28 @@ use Build::Graph;
 use lib 't/lib';
 
 my $graph = Build::Graph->new;
-$graph->load_plugin(basic => 'Basic', next_is => 'main::next_is');
+$graph->load_plugin('Basic', next_is => 'main::next_is');
 
 my $dirname = tempdir(CLEANUP => 1);
 END { rmtree $dirname if defined $dirname }
 $SIG{INT} = sub { rmtree $dirname; die "Interrupted!\n" };
 
 my $source1 = File::Spec->catfile($dirname, 'source1');
-$graph->add_file($source1, action => [ 'basic/spew', '$(target)', 'Hello' ]);
+$graph->add_file($source1, action => [ 'Basic/spew', '$(target)', 'Hello' ]);
 
 my $source2 = File::Spec->catfile($dirname, 'source2');
-$graph->add_file($source2, action => [ 'basic/spew', '$(target)', 'World' ], dependencies => [ $source1 ]);
+$graph->add_file($source2, action => [ 'Basic/spew', '$(target)', 'World' ], dependencies => [ $source1 ]);
 
 $graph->add_wildcard('foo-files', dir => $dirname, pattern => '*.foo');
-$graph->add_subst('bar-files', 'foo-files', subst => [ 'basic/s-ext', 'foo', 'bar', '$(source)' ], action => [ 'basic/spew', '$(target)', '$(source)' ]);
+$graph->add_subst('bar-files', 'foo-files', subst => [ 'Basic/s-ext', 'foo', 'bar', '$(source)' ], action => [ 'Basic/spew', '$(target)', '$(source)' ]);
 
 my $source3_foo = File::Spec->catfile($dirname, 'source3.foo');
-$graph->add_file($source3_foo, action => [ 'basic/spew', '$(target)', 'foo' ]);
+$graph->add_file($source3_foo, action => [ 'Basic/spew', '$(target)', 'foo' ]);
 my $source3_bar = File::Spec->catfile($dirname, 'source3.bar');
 
-$graph->add_phony('build', action => [ 'basic/noop', '$(target)' ], dependencies => [ $source1, $source2, $source3_bar ]);
-$graph->add_phony('test', action => [ 'basic/noop', '$(target)' ], dependencies => [ 'build' ]);
-$graph->add_phony('install', action => [ 'basic/noop', '$(target)' ], dependencies => [ 'build' ]);
+$graph->add_phony('build', action => [ 'Basic/noop', '$(target)' ], dependencies => [ $source1, $source2, $source3_bar ]);
+$graph->add_phony('test', action => [ 'Basic/noop', '$(target)' ], dependencies => [ 'build' ]);
+$graph->add_phony('install', action => [ 'Basic/noop', '$(target)' ], dependencies => [ 'build' ]);
 
 my @sorted = $graph->_sort_nodes('build');
 

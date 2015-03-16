@@ -196,16 +196,18 @@ sub load {
 		$self->{nodes}{$key} = $class->new(%{$value}, name => $key, graph => $self);
 	}
 	for my $plugin (@{ $hashref->{plugins} }) {
-		$self->load_plugin($plugin->{name}, $plugin->{module}, %{$plugin});
+		$self->load_plugin($plugin->{module}, %{$plugin});
 	}
 	return $self;
 }
 
 sub load_plugin {
-	my ($self, $name, $module, %args) = @_;
+	my ($self, $module, %args) = @_;
 	(my $filename = "$module.pm") =~ s{::}{/}g;
 	require $filename;
-	my $plugin = $module->new(%args, name => $name, graph => $self);
+	my $plugin = $module->new(%args, graph => $self);
+	my $name = $plugin->name;
+	Carp::croak("Plugin collision: $name already exists") if exists $self->{plugins}{$name};
 	$self->{plugins}{$name} = $plugin;
 	return;
 }
