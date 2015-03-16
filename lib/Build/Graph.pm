@@ -17,7 +17,6 @@ sub new {
 	return bless {
 		nodes     => $args{nodes}     || {},
 		plugins   => $args{plugins}   || {},
-		matchers  => $args{matchers}  || [],
 		variables => $args{variables} || {},
 	}, $class;
 }
@@ -124,9 +123,8 @@ sub add_subst {
 	return;
 }
 
-sub add_plugin_handler {
+sub visit_plugins {
 	my ($self, $handler) = @_;
-	push @{ $self->{matchers} }, $handler;
 	for my $plugin (values %{ $self->{plugins} }) {
 		$handler->($plugin);
 	}
@@ -209,9 +207,6 @@ sub load_plugin {
 	require $filename;
 	my $plugin = $module->new(%args, name => $name, graph => $self);
 	$self->{plugins}{$name} = $plugin;
-	for my $matcher (@{ $self->{matchers} }) {
-		$matcher->($plugin);
-	}
 	return;
 }
 
