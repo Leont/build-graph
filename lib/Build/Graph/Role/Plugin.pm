@@ -8,8 +8,9 @@ use Scalar::Util ();
 sub new {
 	my ($class, %args) = @_;
 	my $self = bless {
-		name  => $args{name}  || ($class =~ / \A (?:.*::)? ([^:]+) \z /xms)[0],
-		graph => $args{graph} || Carp::croak('No graph given'),
+		name    => $args{name}    || ($class =~ / \A (?:.*::)? ([^:]+) \z /xms)[0],
+		graph   => $args{graph}   || Carp::croak('No graph given'),
+		counter => $args{counter} || Carp::croak('No counter given'),
 	}, $class;
 	Scalar::Util::weaken($self->{graph});
 	return $self;

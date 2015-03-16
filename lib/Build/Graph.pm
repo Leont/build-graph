@@ -18,6 +18,7 @@ sub new {
 		nodes     => $args{nodes}     || {},
 		plugins   => $args{plugins}   || {},
 		variables => $args{variables} || {},
+		counter   => $args{counter}   || 1,
 	}, $class;
 }
 
@@ -123,14 +124,6 @@ sub add_subst {
 	return;
 }
 
-sub visit_plugins {
-	my ($self, $handler) = @_;
-	for my $plugin (values %{ $self->{plugins} }) {
-		$handler->($plugin);
-	}
-	return;
-}
-
 my $node_sorter;
 $node_sorter = sub {
 	my ($self, $current, $callback, $seen, $loop) = @_;
@@ -164,7 +157,7 @@ sub to_hashref {
 	my $self      = shift;
 	my %nodes     = map { $_ => $self->get_node($_)->to_hashref } keys %{ $self->{nodes} };
 	my %variables = map { $_ => $self->{variables}{$_}->to_hashref } keys %{ $self->{variables} };
-	my @plugins   = map { $_->to_hashref } values %{ $self->{plugins} };
+	my @plugins = map { $_->to_hashref } sort { $a->{counter} <=> $b->{counter} } values %{ $self->{plugins} };
 	return {
 		plugins   => \@plugins,
 		nodes     => \%nodes,
@@ -184,7 +177,7 @@ sub _load_variables {
 }
 
 sub load {
-	my ($class, $hashref) = @_;
+	my ($class, $hashref, $callback) = @_;
 	my $self = Build::Graph->new;
 	for my $name (keys %{ $hashref->{variables} }) {
 		next if $self->{variables}{$name};
@@ -196,7 +189,8 @@ sub load {
 		$self->{nodes}{$key} = $class->new(%{$value}, name => $key, graph => $self);
 	}
 	for my $plugin (@{ $hashref->{plugins} }) {
-		$self->load_plugin($plugin->{module}, %{$plugin});
+		my $plugin = $self->load_plugin($plugin->{module}, %{$plugin});
+		$callback->($plugin) if $callback;
 	}
 	return $self;
 }
@@ -205,11 +199,11 @@ sub load_plugin {
 	my ($self, $module, %args) = @_;
 	(my $filename = "$module.pm") =~ s{::}{/}g;
 	require $filename;
-	my $plugin = $module->new(%args, graph => $self);
+	my $plugin = $module->new(%args, graph => $self, counter => $self->{counter}++);
 	my $name = $plugin->name;
 	Carp::croak("Plugin collision: $name already exists") if exists $self->{plugins}{$name};
 	$self->{plugins}{$name} = $plugin;
-	return;
+	return $plugin;
 }
 
 1;
