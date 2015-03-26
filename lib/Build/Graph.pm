@@ -13,12 +13,12 @@ use Build::Graph::Variable::Subst;
 use Build::Graph::Variable::Free;
 
 sub new {
-	my ($class, %args) = @_;
+	my $class = shift;
 	return bless {
-		nodes     => $args{nodes}     || {},
-		plugins   => $args{plugins}   || {},
-		variables => $args{variables} || {},
-		counter   => $args{counter}   || 1,
+		nodes     => {},
+		plugins   => {},
+		variables => {},
+		counter   => 1,
 	}, $class;
 }
 
