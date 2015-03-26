@@ -51,15 +51,19 @@ my @runs     = qw/build test install/;
 my %expected = (
 	build => [
 		[ @full ],
-		[qw/build/],
+		[ 'build' ],
 
 		sub { rmtree $dirname },
 		[ @full ],
-		[qw/build/],
+		[ 'build' ],
 
 		sub { unlink $source2 or die "Couldn't remove $source2: $!" },
 		[ $source2, 'build'],
-		[qw/build/],
+		[ 'build' ],
+
+		sub { utime 0, $^T - 1, $source3_bar },
+		[ $source3_bar, 'build' ],
+		[ 'build' ],
 
 		sub { unlink $source3_foo; utime 0, $^T - 1, $source3_bar },
 		[ $source3_foo, $source3_bar, 'build' ],
@@ -71,23 +75,24 @@ my %expected = (
 
 		sub { unlink $source1; utime 0, $^T - 1, $source2 ; },
 		[ $source1, $source2, 'build'],
-		[qw/build/],
+		[ 'build' ],
 	],
 	test    => [
 		[ @full, 'test' ],
-		[qw/build test/],
+		[ qw/build test/ ],
 	],
 	install => [
 		[ @full, 'install' ],
-		[qw/build install/],
+		[ qw/build install/ ],
 	],
 );
 
 my $run;
-our @got;
+my $got;
 sub next_is {
 	my $gotten = shift;
-	push @got, $gotten;
+	push @$got, $gotten;
+	return;
 }
 
 my $clone = Build::Graph->load($graph->to_hashref);
@@ -106,9 +111,9 @@ for my $current ($graph, $clone) {
 			}
 			else {
 				my @expected = map { File::Spec->catfile(File::Spec::Unix->splitdir($_)) } @{$runpart};
-				local @got;
+				$got = [];
 				$current->run($run, verbosity => 1);
-				eq_or_diff \@got, \@expected, "\@got is @expected in run $run-$desc[$is_clone]-$count";
+				eq_or_diff(\@$got, \@expected, "\@got is @expected in run $run-$desc[$is_clone]-$count");
 				$count++;
 			}
 		}
