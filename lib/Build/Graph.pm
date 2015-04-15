@@ -59,7 +59,7 @@ sub run_subst {
 	return $subst_action->(@args);
 }
 
-sub get_node {
+sub _get_node {
 	my ($self, $key) = @_;
 	return $self->{nodes}{$key};
 }
@@ -130,7 +130,7 @@ $node_sorter = sub {
 	Carp::croak("$current has a circular dependency, aborting!\n") if exists $loop->{$current};
 	return if $seen->{$current}++;
 	local $loop->{$current} = 1;
-	if (my $node = $self->get_node($current)) {
+	if (my $node = $self->_get_node($current)) {
 		$self->$node_sorter($_, $callback, $seen, $loop) for $self->expand({}, $node->dependencies);
 		$callback->($current, $node);
 	}
@@ -155,7 +155,7 @@ sub _sort_nodes {
 
 sub to_hashref {
 	my $self      = shift;
-	my %nodes     = map { $_ => $self->get_node($_)->to_hashref } keys %{ $self->{nodes} };
+	my %nodes     = map { $_ => $self->_get_node($_)->to_hashref } keys %{ $self->{nodes} };
 	my %variables = map { $_ => $self->{variables}{$_}->to_hashref } keys %{ $self->{variables} };
 	my @plugins = map { $_->to_hashref } sort { $a->{counter} <=> $b->{counter} } values %{ $self->{plugins} };
 	return {
