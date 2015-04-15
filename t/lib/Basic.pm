@@ -26,7 +26,7 @@ sub get_commands {
 	};
 }
 
-sub get_substs {
+sub get_trans {
 	return {
 		's-ext' => sub {
 			my ($orig, $repl, $source) = @_;

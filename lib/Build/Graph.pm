@@ -51,11 +51,11 @@ sub run_command {
 	return $callback->(@args);
 }
 
-sub run_subst {
+sub run_trans {
 	my ($self, $command, @args) = @_;
 	my ($groupname, $subst) = split m{/}, $command, 2;
 	my $group = $self->{plugins}{$groupname};
-	my $subst_action = $group ? $group->lookup_subst($subst) : Carp::croak("No such subst $command");
+	my $subst_action = $group ? $group->lookup_trans($subst) : Carp::croak("No such transformation $command");
 	return $subst_action->(@args);
 }
 

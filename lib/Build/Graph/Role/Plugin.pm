@@ -27,20 +27,20 @@ sub graph {
 }
 
 sub lookup_command {
-	my ($self, $name, $plugins) = @_;
+	my ($self, $name) = @_;
 	return $self->get_commands->{$name};
 }
 
-sub lookup_subst {
+sub lookup_trans {
 	my ($self, $name) = @_;
-	return $self->get_substs->{$name};
+	return $self->get_trans->{$name};
 }
 
 sub get_commands {
 	return {};
 }
 
-sub get_substs {
+sub get_trans {
 	return {};
 }
 
