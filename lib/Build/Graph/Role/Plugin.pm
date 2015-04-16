@@ -21,19 +21,18 @@ sub name {
 	return $self->{name};
 }
 
-sub graph {
-	my $self = shift;
-	return $self->{graph};
+sub run_command {
+	my ($self, $command, @arguments) = @_;
+	my ($plugin, $subcommand) = $command =~ m{ ^ ([^/]+) / (.*) }x ? ($self->{graph}->lookup_plugin($1), $2) : ($self, $command);
+	my $callback = $plugin->get_commands->{$subcommand} or Carp::croak("No such command $subcommand in $self->{name}");
+	return $callback->(@arguments);
 }
 
-sub lookup_command {
-	my ($self, $name) = @_;
-	return $self->get_commands->{$name};
-}
-
-sub lookup_trans {
-	my ($self, $name) = @_;
-	return $self->get_trans->{$name};
+sub run_trans {
+	my ($self, $trans, @arguments) = @_;
+	my ($plugin, $subtrans) = $trans =~ m{ ^ ([^/]+) / (.*) }x ? ($self->{graph}->lookup_plugin($1), $2) : ($self, $trans);
+	my $callback = $plugin->get_trans->{$subtrans} or Carp::croak("No such transformation $trans in $self->{name}");
+	return $callback->(@arguments);
 }
 
 sub get_commands {

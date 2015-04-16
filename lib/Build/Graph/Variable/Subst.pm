@@ -19,10 +19,12 @@ sub new {
 sub process {
 	my ($self, $source) = @_;
 
-	my @command = $self->{graph}->expand({ source => $source }, @{ $self->{trans} });
-	my $target = $self->{graph}->run_trans(@command);
+	my ($command, @arguments) = $self->{graph}->expand({ source => $source }, @{ $self->{trans} });
+	my ($plugin_name, $subcommand) = split m{/}, $command, 2;
+	my $plugin = $self->{graph}->lookup_plugin($plugin_name) or Carp::croak("No such plugin $plugin_name");
+	my $target = $plugin->run_trans($subcommand, @arguments) or Carp::croak("No such transformation $subcommand in plugin " . $plugin->name);
 
-	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} } ], action => $self->{action});
+	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} } ], action => $self->{action}) if $self->{action};
 	push @{ $self->{entries} }, $target;
 	$self->trigger($target);
 	return;

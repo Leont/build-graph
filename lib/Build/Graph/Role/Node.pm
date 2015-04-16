@@ -37,9 +37,11 @@ sub add_dependencies {
 sub run {
 	my ($self, $more) = @_;
 	my %options = (target => $self->{name}, dependencies => $self->{dependendies}, source => $self->{dependencies}[0], %{$more});
-	my @command = $self->{graph}->expand(\%options, @{ $self->{action} }) or return;
-	$self->{graph}->run_command(@command) or return;
-	return;
+	my ($command, @arguments) = $self->{graph}->expand(\%options, @{ $self->{action} }) or return;
+
+	my ($plugin_name, $subcommand) = split m{/}, $command, 2;
+	my $plugin = $self->{graph}->lookup_plugin($plugin_name) or Carp::croak("No such plugin $plugin_name");
+	return $plugin->run_command($subcommand, @arguments)
 }
 
 sub to_hashref {

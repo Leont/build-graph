@@ -43,20 +43,9 @@ sub expand {
 	return map { $self->_expand($options, $_, 1) } @values;
 }
 
-sub run_command {
-	my ($self, $command, @args) = @_;
-	my ($groupname, $subcommand) = split m{/}, $command, 2;
-	my $group = $self->{plugins}{$groupname};
-	my $callback = $group ? $group->lookup_command($subcommand, $self) : Carp::croak("No such command $command");
-	return $callback->(@args);
-}
-
-sub run_trans {
-	my ($self, $command, @args) = @_;
-	my ($groupname, $subst) = split m{/}, $command, 2;
-	my $group = $self->{plugins}{$groupname};
-	my $subst_action = $group ? $group->lookup_trans($subst) : Carp::croak("No such transformation $command");
-	return $subst_action->(@args);
+sub lookup_plugin {
+	my ($self, $name) = @_;
+	return $self->{plugins}{$name};
 }
 
 sub _get_node {
