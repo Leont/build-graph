@@ -10,7 +10,7 @@ sub run {
 	my $filename = $self->name;
 
 	my $graph = $self->{graph};
-	my @files = grep { $graph->_get_node($_) && $graph->_get_node($_)->isa(__PACKAGE__) || -e } $graph->expand({}, $self->dependencies);
+	my @files = grep { $graph->_get_node($_) && $graph->_get_node($_)->isa(__PACKAGE__) || -e } $self->dependencies;
 
 	return if -e $filename and sub { -d or -M $filename <= -M or return 0 for @files; 1 }->();
 

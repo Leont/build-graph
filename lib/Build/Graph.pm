@@ -120,7 +120,7 @@ $node_sorter = sub {
 	return if $seen->{$current}++;
 	local $loop->{$current} = 1;
 	if (my $node = $self->_get_node($current)) {
-		$self->$node_sorter($_, $callback, $seen, $loop) for $self->expand({}, $node->dependencies);
+		$self->$node_sorter($_, $callback, $seen, $loop) for $node->dependencies;
 		$callback->($current, $node);
 	}
 	elsif (not -e $current) {
