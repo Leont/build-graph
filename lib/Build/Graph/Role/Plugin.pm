@@ -51,6 +51,36 @@ sub to_hashref {
 	};
 }
 
+sub _rel_to_abs {
+	my ($value, $pwd) = @_;
+	return $value if not defined $value or not @{$value} or $value->[0] =~ m{/};
+	return [ "$pwd/" . $value->[0], @{$value}[ 1..$#{ $value } ] ];
+}
+
+for my $method (qw/add_file add_phony/) {
+	no strict 'refs';
+	*{$method} = sub {
+		my ($self, $name, %options) = @_;
+		$options{action} = _rel_to_abs($options{action}, $self->{name});
+		return $self->{graph}->$method($name, %options);
+	};
+}
+
+for my $method (qw/add_variable add_wildcard/) {
+	no strict 'refs';
+	*{$method} = sub {
+		my ($self, $name, @arguments) = @_;
+		return $self->{graph}->$method($name, @arguments);
+	};
+}
+
+sub add_subst {
+	my ($self, $sink, $source, %options) = @_;
+	$options{trans}  = _rel_to_abs($options{trans}, $self->{name});
+	$options{action} = _rel_to_abs($options{action}, $self->{name});
+	return $self->{graph}->add_subst($sink, $source, %options);
+}
+
 1;
 
 # ABSTRACT: A base role for various types of plugins
