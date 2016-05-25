@@ -12,6 +12,8 @@ use Build::Graph::Variable::Wildcard;
 use Build::Graph::Variable::Subst;
 use Build::Graph::Variable::Free;
 
+use Build::Graph::Util;
+
 sub new {
 	my $class = shift;
 	return bless {
@@ -81,10 +83,7 @@ sub _add_node {
 
 sub add_wildcard {
 	my ($self, $name, %args) = @_;
-	if (ref($args{pattern}) ne 'Regexp') {
-		require Text::Glob;
-		$args{pattern} = Text::Glob::glob_to_regex($args{pattern});
-	}
+	$args{pattern} = Build::Graph::Util::glob_to_regex($args{pattern}) if ref($args{pattern}) ne 'Regexp';
 	my $wildcard = Build::Graph::Variable::Wildcard->new(%args, graph => $self, name => $name);
 	$self->{variables}{$name} = $wildcard;
 	my @nodes = grep { $self->{nodes}{$_}->isa('Build::Graph::Node::File') } keys %{ $self->{nodes} };
