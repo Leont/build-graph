@@ -3,7 +3,7 @@ package Build::Graph::Node::Phony;
 use strict;
 use warnings;
 
-use parent 'Build::Graph::Role::Node';
+use base 'Build::Graph::Role::Node';
 
 1;
 

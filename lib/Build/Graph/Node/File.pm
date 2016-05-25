@@ -3,7 +3,7 @@ package Build::Graph::Node::File;
 use strict;
 use warnings;
 
-use parent 'Build::Graph::Role::Node';
+use base 'Build::Graph::Role::Node';
 
 sub run {
 	my ($self, $options) = @_;
