@@ -21,7 +21,6 @@ sub new {
 		nodes     => {},
 		plugins   => {},
 		variables => {},
-		seen      => {},
 		counter   => 1,
 	}, $class;
 }
@@ -110,7 +109,7 @@ sub add_wildcard {
 	my $wildcard = Build::Graph::Variable::Wildcard->new(%args, graph => $self, name => $name);
 	$self->{variables}{$name} = $wildcard;
 	my @nodes = grep { $self->{nodes}{$_}->isa('Build::Graph::Node::File') } keys %{ $self->{nodes} };
-	$wildcard->match($_) for @nodes, keys %{ $self->{seen} };
+	$wildcard->match($_) for @nodes;
 	return;
 }
 
@@ -118,19 +117,6 @@ sub add_variable {
 	my ($self, $name, @values) = @_;
 	$self->{variables}{$name} ||= Build::Graph::Variable::Free->new(name => $name);
 	$self->{variables}{$name}->add_entries(@values);
-	return;
-}
-
-sub match {
-	my ($self, @names) = @_;
-	my @wildcards = grep { $_->isa('Build::Graph::Variable::Wildcard') } values %{ $self->{variables} };
-	for my $name (@names) {
-		next if $self->{seen}{$name};
-		$self->{seen}{$name} = 1;
-		for my $wildcard (@wildcards) {
-			$wildcard->match($name);
-		}
-	}
 	return;
 }
 
@@ -177,12 +163,10 @@ sub to_hashref {
 	my %nodes     = map { $_ => $self->_get_node($_)->to_hashref } keys %{ $self->{nodes} };
 	my %variables = map { $_ => $self->{variables}{$_}->to_hashref } keys %{ $self->{variables} };
 	my @plugins   = map { $_->to_hashref } sort { $a->{counter} <=> $b->{counter} } values %{ $self->{plugins} };
-	my @seen      = sort keys %{ $self->{seen} };
 	return {
 		plugins   => \@plugins,
 		nodes     => \%nodes,
 		variables => \%variables,
-		seen      => \@seen,
 	};
 }
 
@@ -200,7 +184,6 @@ sub _load_variables {
 sub load {
 	my ($class, $hashref, $callback) = @_;
 	my $self = Build::Graph->new;
-	$self->{seen}{$_} = 1 for @{ $hashref->{seen} };
 	for my $name (keys %{ $hashref->{variables} }) {
 		next if $self->{variables}{$name};
 		_load_variables($self, $hashref->{variables}, $name);
