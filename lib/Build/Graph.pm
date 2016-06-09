@@ -14,6 +14,8 @@ use Build::Graph::Variable::Free;
 
 use Build::Graph::Util;
 
+use Scalar::Util ();
+
 sub new {
 	my $class = shift;
 	return bless {
@@ -25,25 +27,48 @@ sub new {
 	}, $class;
 }
 
+sub _get_value {
+	my ($variables, $key) = @_;
+	my $raw = exists $variables->{$key} ? $variables->{$key} : Carp::croak("No such variable $key");
+	if (Scalar::Util::blessed($raw) && $raw->isa('Build::Graph::Role::Variable')) {
+		my @values = $raw->entries;
+		return @values == 1 ? $values[0] : join ' ', @values;
+	}
+	else {
+		return $raw;
+	}
+}
+
+sub _get_values {
+	my ($variables, $key) = @_;
+	my $raw = exists $variables->{$key} ? $variables->{$key} : Carp::croak("No such variable $key");
+	if (Scalar::Util::blessed($raw) && $raw->isa('Build::Graph::Role::Variable')) {
+		return $raw->entries;
+	}
+	else {
+		return ref($raw) eq 'ARRAY' ? @{ $raw } : $raw;
+	}
+}
+
 sub _expand {
-	my ($self, $options, $key, $count) = @_;
+	my ($variables, $key, $count) = @_;
 	Carp::croak("Deep variable recursion detected involving $key") if $count > 20;
 	if ($key =~ / \A \@\( ([\w.-]+) \) \z /xm) {
-		my $variable = $self->{variables}{$1} or Carp::croak("No such variable $1");
-		return map { $self->_expand($options, $_, $count + 1) } $variable->entries;
+		return map { _expand($variables, $_, $count + 1) } _get_values($variables, $1)
 	}
 	elsif ($key =~ / \A %\( ([\w.,-]+) \) \z /xm) {
-		my @keys = grep { exists $options->{$_} } split /,/, $1;
-		return { map { $_ => $options->{$_} } @keys };
+		my @keys = grep { exists $variables->{$_} } split /,/, $1;
+		return { map { $_ => _expand($variables, _get_value($variables, $_), $count + 1) } @keys };
 	}
-	$key =~ s/ \$\( ([\w.-]+) \) / $self->_expand($options, $options->{$1} || Carp::croak("No such argument $1"), $count + 1) /gex;
+	$key =~ s/ ( (?<!\\)(?>\\\\)* ) \$\( ([\w.-]+) \) / $1 . _expand($variables, _get_value($variables, $2), $count + 1) /gex;
 
 	return $key;
 }
 
 sub expand {
 	my ($self, $options, @values) = @_;
-	return map { $self->_expand($options, $_, 1) } @values;
+	my %all = ( %{ $self->{variables} }, %{$options} );
+	return map { _expand(\%all, $_, 1) } @values;
 }
 
 sub lookup_plugin {
