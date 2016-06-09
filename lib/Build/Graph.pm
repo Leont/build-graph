@@ -5,8 +5,7 @@ use warnings;
 
 use Carp qw//;
 
-use Build::Graph::Node::File;
-use Build::Graph::Node::Phony;
+use Build::Graph::Node;
 
 use Build::Graph::Variable::Wildcard;
 use Build::Graph::Variable::Subst;
@@ -83,7 +82,7 @@ sub _get_node {
 
 sub add_file {
 	my ($self, $name, %args) = @_;
-	my $ret = $self->_add_node($name, %args, type => 'File');
+	my $ret = $self->_add_node($name, %args, type => 'file');
 
 	my @wildcards = grep { $_->isa('Build::Graph::Variable::Wildcard') } values %{ $self->{variables} };
 	for my $wildcard (@wildcards) {
@@ -94,14 +93,13 @@ sub add_file {
 
 sub add_phony {
 	my ($self, $name, %args) = @_;
-	return $self->_add_node($name, %args, type => 'Phony');
+	return $self->_add_node($name, %args, type => 'phony');
 }
 
 sub _add_node {
 	my ($self, $name, %args) = @_;
-	my $type = delete $args{type};
-	Carp::croak("$type '$name' already exists in database") if !$args{override} && exists $self->{nodes}{$name};
-	$self->{nodes}{$name} = "Build::Graph::Node::$type"->new(%args, name => $name, graph => $self);;
+	Carp::croak("\u$args{type} '$name' already exists in database") if !$args{override} && exists $self->{nodes}{$name};
+	$self->{nodes}{$name} = "Build::Graph::Node"->new(%args, name => $name, graph => $self);;
 	$self->add_variable($args{add_to}, $name) if $args{add_to};
 	return $name;
 }
@@ -209,8 +207,7 @@ sub load {
 	}
 	for my $key (keys %{ $hashref->{nodes} }) {
 		my $value = $hashref->{nodes}{$key};
-		my $class = "Build::Graph::Node::\u$value->{type}";
-		$self->{nodes}{$key} = $class->new(%{$value}, name => $key, graph => $self);
+		$self->{nodes}{$key} = Build::Graph::Node->new(%{$value}, name => $key, graph => $self);
 	}
 	for my $plugin (@{ $hashref->{plugins} }) {
 		my $plugin = $self->load_plugin($plugin->{module}, %{$plugin});
