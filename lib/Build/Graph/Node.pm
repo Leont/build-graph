@@ -38,7 +38,7 @@ sub run {
 		my $filename = $self->name;
 
 		my $graph = $self->{graph};
-		my @files = grep { $graph->_get_node($_) && !$graph->_get_node($_)->{phony} || -e } @dependencies;
+		my @files = grep { $graph->_get_node($_) && !$graph->_get_node($_)->{phony} } @dependencies;
 
 		return if -e $filename and sub { -d or -M $filename <= -M or return 0 for @files; 1 }->();
 	}
