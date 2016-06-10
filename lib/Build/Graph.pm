@@ -82,10 +82,7 @@ sub add_file {
 	my ($self, $name, %args) = @_;
 	my $ret = $self->_add_node($name, %args, type => 'file');
 
-	my @wildcards = grep { $_->isa('Build::Graph::Variable::Wildcard') } values %{ $self->{variables} };
-	for my $wildcard (@wildcards) {
-		$wildcard->match($name);
-	}
+	$_->match($name) for grep { $_->isa('Build::Graph::Variable::Wildcard') } values %{ $self->{variables} };
 	return $ret;
 }
 
@@ -105,16 +102,15 @@ sub _add_node {
 sub add_wildcard {
 	my ($self, $name, %args) = @_;
 	$args{pattern} = Build::Graph::Util::glob_to_regex($args{pattern}) if ref($args{pattern}) ne 'Regexp';
-	my $wildcard = Build::Graph::Variable::Wildcard->new(%args, graph => $self, name => $name);
+	my $wildcard = Build::Graph::Variable::Wildcard->new(%args);
 	$self->{variables}{$name} = $wildcard;
-	my @nodes = grep { $self->{nodes}{$_}->isa('Build::Graph::Node::File') } keys %{ $self->{nodes} };
-	$wildcard->match($_) for @nodes;
+	$wildcard->match($_) for grep { $self->{nodes}{$_}->isa('Build::Graph::Node::File') } keys %{ $self->{nodes} };
 	return;
 }
 
 sub add_variable {
 	my ($self, $name, @values) = @_;
-	$self->{variables}{$name} ||= Build::Graph::Variable::Free->new(name => $name);
+	$self->{variables}{$name} ||= Build::Graph::Variable::Free->new();
 	$self->{variables}{$name}->add_entries(@values);
 	return;
 }
