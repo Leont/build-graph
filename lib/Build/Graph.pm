@@ -80,7 +80,7 @@ sub _get_node {
 
 sub add_file {
 	my ($self, $name, %args) = @_;
-	my $ret = $self->_add_node($name, %args, type => 'file');
+	my $ret = $self->_add_node($name, %args);
 
 	$_->match($name) for grep { $_->isa('Build::Graph::Variable::Wildcard') } values %{ $self->{variables} };
 	return $ret;
@@ -88,12 +88,12 @@ sub add_file {
 
 sub add_phony {
 	my ($self, $name, %args) = @_;
-	return $self->_add_node($name, %args, type => 'phony');
+	return $self->_add_node($name, %args, phony => 1);
 }
 
 sub _add_node {
 	my ($self, $name, %args) = @_;
-	Carp::croak("\u$args{type} '$name' already exists in database") if !$args{override} && exists $self->{nodes}{$name};
+	Carp::croak("Node '$name' already exists in database") if !$args{override} && exists $self->{nodes}{$name};
 	$self->{nodes}{$name} = "Build::Graph::Node"->new(%args, name => $name, graph => $self);;
 	$self->add_variable($args{add_to}, $name) if $args{add_to};
 	return $name;
