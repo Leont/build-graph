@@ -119,7 +119,7 @@ sub add_subst {
 	my ($self, $name, $sourcename, %args) = @_;
 	my $source = $self->{variables}{$sourcename};
 	my $sub = Build::Graph::Variable::Subst->new(%args, graph => $self, name => $name);
-	$source->on_file($sub);
+	$source->add_subst($sub);
 	$self->{variables}{$name} = $sub;
 	return;
 }

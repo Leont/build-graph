@@ -29,8 +29,7 @@ sub process {
 	my $target = $plugin->get_transformation($subcommand)->(@arguments);
 
 	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} } ], action => $self->{action}) if $self->{action};
-	push @{ $self->{entries} }, $target;
-	$self->trigger($target);
+	$self->add_entries($target);
 	return;
 }
 

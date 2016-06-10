@@ -19,7 +19,7 @@ sub entries {
 	return @{ $self->{entries} };
 }
 
-sub on_file {
+sub add_subst {
 	my ($self, $sub) = @_;
 	push @{ $self->{substs} }, $sub;
 	for my $file (@{ $self->{entries} }) {
@@ -28,8 +28,9 @@ sub on_file {
 	return;
 }
 
-sub trigger {
+sub add_entries {
 	my ($self, @entries) = @_;
+	push @{ $self->{entries} }, @entries;
 	for my $entry (@entries) {
 		for my $subst (@{ $self->{substs} }) {
 			$subst->process($entry);
