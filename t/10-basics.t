@@ -112,7 +112,7 @@ for my $current ($graph, $clone) {
 			else {
 				my @expected = map { File::Spec->catfile(File::Spec::Unix->splitdir($_)) } @{$runpart};
 				$got = [];
-				$current->run($run, verbosity => 1);
+				$current->run($run);
 				eq_or_diff(\@$got, \@expected, "\@got is @expected in run $run-$desc[$is_clone]-$count");
 				$count++;
 			}
@@ -120,9 +120,8 @@ for my $current ($graph, $clone) {
 	}
 	$is_clone++;
 }
-#delete $_->{plugins} for $clone, $graph;
 
-is_deeply($clone, $graph, 'Clone deeply equals original (mostly)');
+is_deeply($clone, $graph, 'Clone deeply equals original');
 
 done_testing();
 

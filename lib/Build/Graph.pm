@@ -21,7 +21,6 @@ sub new {
 		nodes     => {},
 		plugins   => {},
 		variables => {},
-		counter   => 1,
 	}, $class;
 }
 
@@ -162,9 +161,9 @@ sub to_hashref {
 	my $self      = shift;
 	my %nodes     = map { $_ => $self->_get_node($_)->to_hashref } keys %{ $self->{nodes} };
 	my %variables = map { $_ => $self->{variables}{$_}->to_hashref } keys %{ $self->{variables} };
-	my @plugins   = map { $_->to_hashref } sort { $a->{counter} <=> $b->{counter} } values %{ $self->{plugins} };
+	my %plugins   = map { $_ => $self->{plugins}{$_}->to_hashref } keys %{ $self->{plugins} };
 	return {
-		plugins   => \@plugins,
+		plugins   => \%plugins,
 		nodes     => \%nodes,
 		variables => \%variables,
 	};
@@ -182,7 +181,7 @@ sub _load_variables {
 }
 
 sub load {
-	my ($class, $hashref, $callback) = @_;
+	my ($class, $hashref) = @_;
 	my $self = Build::Graph->new;
 	for my $name (keys %{ $hashref->{variables} }) {
 		next if $self->{variables}{$name};
@@ -192,9 +191,9 @@ sub load {
 		my $value = $hashref->{nodes}{$key};
 		$self->{nodes}{$key} = Build::Graph::Node->new(%{$value}, name => $key, graph => $self);
 	}
-	for my $plugin (@{ $hashref->{plugins} }) {
-		my $plugin = $self->load_plugin($plugin->{module}, %{$plugin});
-		$callback->($plugin) if $callback;
+	for my $name (keys %{ $hashref->{plugins} }) {
+		my $args = $hashref->{plugins}{$name};
+		$self->load_plugin($args->{module}, %{$args}, name => $name);
 	}
 	return $self;
 }
@@ -203,7 +202,7 @@ sub load_plugin {
 	my ($self, $module, %args) = @_;
 	(my $filename = "$module.pm") =~ s{::}{/}g;
 	require $filename;
-	my $plugin = $module->new(%args, graph => $self, counter => $self->{counter}++);
+	my $plugin = $module->new(%args, graph => $self);
 	my $name = $plugin->name;
 	Carp::croak("Plugin collision: $name already exists") if exists $self->{plugins}{$name};
 	$self->{plugins}{$name} = $plugin;

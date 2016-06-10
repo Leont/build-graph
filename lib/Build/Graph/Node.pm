@@ -53,7 +53,7 @@ sub run {
 
 	my ($plugin_name, $subcommand) = split m{/}, $command, 2;
 	my $plugin = $self->{graph}->lookup_plugin($plugin_name) or Carp::croak("No such plugin $plugin_name");
-	return $plugin->run_command($subcommand, @arguments)
+	return $plugin->get_command($subcommand)->(@arguments)
 }
 
 sub to_hashref {

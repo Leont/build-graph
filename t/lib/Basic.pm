@@ -18,22 +18,23 @@ sub new {
 	return $self;
 }
 
-sub get_commands {
-	my ($self) = @_;
+sub get_command {
+	my ($self, $name) = @_;
 	return {
 		'spew' => sub { my ($target, $source) = @_; $self->{next_is_ref}->($target); spew($target, $source) },
 		'noop' => $self->{next_is_ref},
-	};
+	}->{$name};
 }
 
-sub get_trans {
+sub get_transformation {
+	my ($self, $name) = @_;
 	return {
 		's-ext' => sub {
 			my ($orig, $repl, $source) = @_;
 			$source =~ s/(?<=\.)\Q$orig\E\z/$repl/;
 			return $source;
 		}
-	};
+	}->{$name};
 }
 
 sub spew {
