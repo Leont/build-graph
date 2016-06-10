@@ -95,7 +95,8 @@ sub next_is {
 	return;
 }
 
-my $clone = Build::Graph->load($graph->to_hashref);
+my $hashref = $graph->to_hashref;
+my $clone = Build::Graph->load($hashref);
 is_deeply($clone->to_hashref, $graph->to_hashref, 'Clone serialization equals original');
 
 my $is_clone = 0;
@@ -121,6 +122,7 @@ for my $current ($graph, $clone) {
 	$is_clone++;
 }
 
+is_deeply($graph->to_hashref, $hashref, 'hashref is equal to old value');
 is_deeply($clone, $graph, 'Clone deeply equals original');
 
 done_testing();

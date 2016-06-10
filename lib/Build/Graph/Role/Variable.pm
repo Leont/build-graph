@@ -43,8 +43,8 @@ sub to_hashref {
 	my $self = shift;
 	my %ret;
 	$ret{type}    = lc +(ref($self) =~ /^Build::Graph::Variable::(\w+)$/)[0];
-	$ret{entries} = $self->{entries} if @{ $self->{entries} };
-	$ret{substs}  = [ map { $_->{name} } @{ $self->{substs} } ] if @{ $self->{substs} };
+	@{ $ret{entries} } = @{ $self->{entries} } if @{ $self->{entries} };
+	@{ $ret{substs}  } = map { $_->{name} } @{ $self->{substs} } if @{ $self->{substs} };
 	return \%ret;
 }
 

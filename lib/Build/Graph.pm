@@ -168,8 +168,9 @@ sub to_hashref {
 sub _load_variables {
 	my ($self, $source, $name) = @_;
 	my $entry = $source->{$name};
-	_load_variables($self, $source, $_) for grep { not $self->{variables}{$_} } @{ $entry->{substs} };
-	my @substs  = map { $self->{variables}{$_} } @{ $entry->{substs} };
+	my @subst_names = @{ $entry->{substs} || [] };
+	_load_variables($self, $source, $_) for grep { not $self->{variables}{$_} } @subst_names;
+	my @substs  = map { $self->{variables}{$_} } @subst_names;
 	my $class   = "Build::Graph::Variable::\u$entry->{type}";
 	my $entries = $class->new(%{$entry}, substs => \@substs, graph => $self, name => $name);
 	$self->{variables}{$name} = $entries;

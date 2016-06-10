@@ -9,15 +9,15 @@ use Scalar::Util ();
 sub new {
 	my ($class, %args) = @_;
 	Carp::croak('Invalid type') if $args{type} ne 'file' && $args{type} ne 'phony';
-	my $ret = bless {
+	my $self = bless {
 		graph        => $args{graph}        || Carp::croak('No graph given'),
 		name         => $args{name}         || Carp::croak('No name given'),
-		dependencies => $args{dependencies} || [],
-		action       => $args{action},
 		type         => $args{type},
 	}, $class;
-	Scalar::Util::weaken($ret->{graph});
-	return $ret;
+	Scalar::Util::weaken($self->{graph});
+	@{ $self->{dependencies} } = @{ $args{dependencies} } if $args{dependencies};
+	@{ $self->{action}       } = @{ $args{action} } if $args{action};
+	return $self;
 }
 
 sub name {
@@ -27,29 +27,28 @@ sub name {
 
 sub dependencies {
 	my $self = shift;
-	return $self->{graph}->expand({}, @{ $self->{dependencies} });
-}
-
-sub add_dependencies {
-	my ($self, @dependencies) = @_;
-	push @{ $self->{dependencies} }, @dependencies;
-	return;
+	return $self->{graph}->expand({ target => $self->name }, @{ $self->{dependencies} || [] });
 }
 
 sub run {
-	my ($self, $more) = @_;
+	my ($self, $arguments) = @_;
+
+	my @dependencies = $self->dependencies;
 
 	if ($self->{type} eq 'file') {
 		my $filename = $self->name;
 
 		my $graph = $self->{graph};
-		my @files = grep { $graph->_get_node($_) && $graph->_get_node($_)->{type} eq 'file' || -e } $self->dependencies;
+		my @files = grep { $graph->_get_node($_) && $graph->_get_node($_)->{type} eq 'file' || -e } @dependencies;
 
 		return if -e $filename and sub { -d or -M $filename <= -M or return 0 for @files; 1 }->();
 	}
 
-	my %options = (target => $self->{name}, dependencies => $self->{dependendies}, source => $self->{dependencies}[0], %{$more});
-	my ($command, @arguments) = $self->{graph}->expand(\%options, @{ $self->{action} }) or return;
+	my %options = (%{$arguments}, target => $self->{name}, dependencies => \@dependencies, source => $dependencies[0]);
+	my ($command, @arguments) = $self->{graph}->expand(\%options, @{ $self->{action} || [] }) or do {
+		return if $self->{type} eq 'phony';
+		Carp::croak("No action for $self->{name}}");
+	};
 
 	my ($plugin_name, $subcommand) = split m{/}, $command, 2;
 	my $plugin = $self->{graph}->lookup_plugin($plugin_name) or Carp::croak("No such plugin $plugin_name");
@@ -57,12 +56,11 @@ sub run {
 }
 
 sub to_hashref {
-	my $self         = shift;
-	my @dependencies = @{ $self->{dependencies} };
+	my $self           = shift;
 	my %ret;
-	$ret{type}         = $self->{type};
-	$ret{dependencies} = \@dependencies  if @dependencies;
-	$ret{action}       = $self->{action} if $self->{action};
+	$ret{type}              = $self->{type};
+	@{ $ret{dependencies} } = @{ $self->{dependencies} } if $self->{dependencies};
+	@{ $ret{action} }       = @{ $self->{action} } if $self->{action};
 	return \%ret;
 }
 

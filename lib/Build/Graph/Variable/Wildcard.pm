@@ -12,9 +12,9 @@ use File::Spec ();
 sub new {
 	my ($class, %args) = @_;
 	my $self = $class->SUPER::new(%args);
-	$self->{pattern} = $args{pattern} || Carp::croak('No pattern is given');
-	$self->{pattern} = qr/$self->{pattern}/ if not ref $self->{pattern};
-	$self->{dir}     = ref($args{dir}) ? $args{dir} : [ File::Spec->splitdir($args{dir}) ];
+	$self->{pattern}  = $args{pattern} || Carp::croak('No pattern is given');
+	$self->{pattern}  = qr/$self->{pattern}/ if not ref $self->{pattern} eq 'Regexp';
+	@{ $self->{dir} } = ref($args{dir}) ? @{ $args{dir} } : File::Spec->splitdir($args{dir});
 	return $self;
 }
 
