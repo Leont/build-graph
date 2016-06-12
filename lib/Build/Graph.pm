@@ -25,8 +25,8 @@ sub new {
 }
 
 sub _get_value {
-	my ($variables, $key) = @_;
-	my $raw = exists $variables->{$key} ? $variables->{$key} : Carp::croak("No such variable $key");
+	my ($variables, $key, $optional) = @_;
+	my $raw = $optional || exists $variables->{$key} ? $variables->{$key} : Carp::croak("No such variable $key");
 	if (Scalar::Util::blessed($raw) && $raw->isa('Build::Graph::Role::Variable')) {
 		my @values = $raw->entries;
 		return @values == 1 ? $values[0] : join ' ', @values;
@@ -37,8 +37,8 @@ sub _get_value {
 }
 
 sub _get_values {
-	my ($variables, $key) = @_;
-	my $raw = exists $variables->{$key} ? $variables->{$key} : Carp::croak("No such variable $key");
+	my ($variables, $key, $optional) = @_;
+	my $raw = $optional || exists $variables->{$key} ? $variables->{$key} : Carp::croak("No such variable $key");
 	if (Scalar::Util::blessed($raw) && $raw->isa('Build::Graph::Role::Variable')) {
 		return $raw->entries;
 	}
@@ -47,25 +47,45 @@ sub _get_values {
 	}
 }
 
-sub _expand {
-	my ($variables, $key, $count) = @_;
-	Carp::croak("Deep variable recursion detected involving $key") if $count > 20;
-	if ($key =~ / \A \@\( ([\w.-]+) \) \z /xm) {
-		return map { _expand($variables, $_, $count + 1) } _get_values($variables, $1)
+sub _expand_list {
+	my ($variables, $value, $count) = @_;
+	Carp::croak("Deep variable recursion detected involving $value") if $count > 20;
+	return $value if not defined $value;
+	if (ref($value) eq 'ARRAY') {
+		return [ map { _expand_list($variables, $_, $count + 1)  } @{ $value } ];
 	}
-	elsif ($key =~ / \A %\( ([\w.,-]+) \) \z /xm) {
-		my @keys = grep { exists $variables->{$_} } split /,/, $1;
-		return { map { $_ => _expand($variables, _get_value($variables, $_), $count + 1) } @keys };
+	elsif (ref($value) eq 'HASH') {
+		return { map { $_ => _expand_scalar($variables, $value->{$_}, $count + 1) } keys %{ $value } };
 	}
-	$key =~ s/ ( (?<!\\)(?>\\\\)* ) \$\( ([\w.-]+) \) / $1 . _expand($variables, _get_value($variables, $2), $count + 1) /gex;
+	elsif (ref $value) {
+		return $value;
+	}
+	elsif ($value =~ / \A \@\( ([\w.-]+) (\??) \) \z /xm) {
+		return map { _expand_list($variables, $_, $count + 1) } _get_values($variables, $1, $2);
+	}
+	elsif ($value =~ / \A %\( ([\w.,-]+) \) \z /xm) {
+		return { map { $_ => _expand_scalar($variables, _get_value($variables, $_, 1), $count + 1) } split /,/, $1 };
+	}
+	elsif ($value =~ / \A \$\( ([\w.-]+) (\??) \) \z /xms) {
+		return _expand_scalar($variables, _get_value($variables, $1, $2), $count + 1);
+	}
+	else {
+		$value =~ s/ ( (?<!\\)(?>\\\\)* ) \$\( ([\w.-]+) (\??) \) / $1 . _expand_scalar($variables, _get_value($variables, $2, $3), $count + 1) /gex;
+		return $value;
+	}
+}
 
-	return $key;
+sub _expand_scalar {
+	my ($variables, $value, $count) = @_;
+	my @ret = _expand_list($variables, $value, $count);
+	return $ret[0] if @ret == 1;
+	return join ' ', @ret;
 }
 
 sub expand {
 	my ($self, $options, @values) = @_;
 	my %all = ( %{ $self->{variables} }, %{$options} );
-	return map { _expand(\%all, $_, 1) } @values;
+	return map { _expand_list(\%all, $_, 1) } @values;
 }
 
 sub lookup_plugin {
