@@ -14,7 +14,7 @@ sub new {
 	my $self = $class->SUPER::new(%args);
 	$self->{pattern}  = $args{pattern} || Carp::croak('No pattern is given');
 	$self->{pattern}  = qr/$self->{pattern}/ if not ref $self->{pattern} eq 'Regexp';
-	@{ $self->{dir} } = ref($args{dir}) ? @{ $args{dir} } : File::Spec->splitdir($args{dir});
+	@{ $self->{dir} } = ref($args{dir}) ? @{ $args{dir} } : $args{dir} eq File::Spec->curdir ? () : File::Spec->splitdir(File::Spec->canonpath($args{dir}));
 	return $self;
 }
 
