@@ -13,8 +13,8 @@ sub new {
 	my $self = $class->SUPER::new(%args);
 	$self->{name}              = $args{name}            || Carp::croak('No name given');
 	@{ $self->{trans}        } = @{ $args{trans}        || Carp::croak('No trans given')  };
-	@{ $self->{action}       } = @{ $args{action}       || Carp::croak('No action given') };
-	@{ $self->{dependencies} } = @{ $args{dependencies} || []                             };
+	@{ $self->{action}       } = @{ $args{action}       }  if $args{action};
+	@{ $self->{dependencies} } = @{ $args{dependencies} }  if $args{dependencies};
 	$self->{graph}             = $args{graph}           || Carp::croak('No graph given');
 	Scalar::Util::weaken($self->{graph});
 	return $self;
@@ -28,7 +28,7 @@ sub process {
 	my $plugin = $self->{graph}->lookup_plugin($plugin_name) or Carp::croak("No such plugin $plugin_name");
 	my $target = $plugin->get_transformation($subcommand)->(@arguments);
 
-	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} } ], action => $self->{action}) if $self->{action};
+	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} || [] } ], action => $self->{action}) if $self->{action};
 	$self->add_entries($target);
 	return;
 }
@@ -36,8 +36,9 @@ sub process {
 sub to_hashref {
 	my $self = shift;
 	my $ret  = $self->SUPER::to_hashref;
-	@{$ret}{qw/trans action/} = map { [ @{ $_ || [] } ] } @{$self}{qw/trans action/};
-	@{ $ret->{dependencies} } = @{ $self->{dependencies} } if @{ $self->{dependencies} };
+	@{ $ret->{trans} } = @{ $self->{trans} };
+	@{ $ret->{action} } = @{ $self->{action} } if $self->{action};
+	@{ $ret->{dependencies} } = @{ $self->{dependencies} } if $self->{dependencies};
 	return $ret;
 }
 
