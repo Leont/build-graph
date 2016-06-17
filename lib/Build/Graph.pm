@@ -50,8 +50,10 @@ sub _get_values {
 sub _expand_list {
 	my ($variables, $value, $count) = @_;
 	Carp::croak("Deep variable recursion detected involving $value") if $count > 20;
-	return $value if not defined $value;
-	if (ref($value) eq 'ARRAY') {
+	if (not defined $value) {
+		return $value;
+	}
+	elsif (ref($value) eq 'ARRAY') {
 		return [ map { _expand_list($variables, $_, $count + 1)  } @{ $value } ];
 	}
 	elsif (ref($value) eq 'HASH') {
@@ -78,6 +80,7 @@ sub _expand_list {
 sub _expand_scalar {
 	my ($variables, $value, $count) = @_;
 	my @ret = _expand_list($variables, $value, $count);
+	return undef if not @ret;
 	return $ret[0] if @ret == 1;
 	return join ' ', @ret;
 }
