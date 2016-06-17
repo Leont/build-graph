@@ -43,7 +43,7 @@ sub _get_values {
 		return $raw->entries;
 	}
 	else {
-		return ref($raw) eq 'ARRAY' ? @{ $raw } : $raw;
+		return ref($raw) eq 'ARRAY' ? @{ $raw } : defined $raw ? $raw : ();
 	}
 }
 
