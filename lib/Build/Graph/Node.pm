@@ -44,14 +44,16 @@ sub run {
 	}
 
 	my %options = (%{$arguments}, target => $self->{name}, dependencies => \@dependencies, source => $dependencies[0]);
-	my ($command, @arguments) = $self->{graph}->expand(\%options, @{ $self->{action} || [] }) or do {
-		return if $self->{phony};
-		Carp::croak("No action for $self->{name}");
-	};
-
-	my ($plugin_name, $subcommand) = split m{/}, $command, 2;
-	my $plugin = $self->{graph}->lookup_plugin($plugin_name) or Carp::croak("No such plugin $plugin_name");
-	return $plugin->get_command($subcommand)->(@arguments)
+	if (my ($command, @arguments) = $self->{graph}->expand(\%options, @{ $self->{action} || [] })) {
+		my ($plugin_name, $subcommand) = split m{/}, $command, 2;
+		my $plugin = $self->{graph}->lookup_plugin($plugin_name) or Carp::croak("No such plugin $plugin_name");
+		my $callback = $plugin->get_action($subcommand) or Carp::croak("No callback $subcommand in $plugin_name");
+		eval { $callback->(@arguments); 1 } or do { unlink $self->{name} if !$self->{phony} && -f $self->{name}; die $@ };
+	}
+	else {
+		Carp::croak("No action for $self->{name}") if !$self->{phony};
+	}
+	return;
 }
 
 sub to_hashref {

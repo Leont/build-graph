@@ -18,7 +18,7 @@ sub new {
 	return $self;
 }
 
-sub get_command {
+sub get_action {
 	my ($self, $name) = @_;
 	return {
 		'spew' => sub { my ($target, $source) = @_; $self->{next_is_ref}->($target); spew($target, $source) },
