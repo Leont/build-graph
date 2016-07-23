@@ -19,7 +19,7 @@ sub new {
 	my $class = shift;
 	return bless {
 		nodes     => {},
-		plugins   => {},
+		commands  => {},
 		variables => {},
 	}, $class;
 }
@@ -93,7 +93,7 @@ sub expand {
 
 sub lookup_plugin {
 	my ($self, $name) = @_;
-	return $self->{plugins}{$name};
+	return $self->{commands}{$name};
 }
 
 sub _get_node {
@@ -177,14 +177,14 @@ sub _sort_nodes {
 }
 
 sub to_hashref {
-	my $self      = shift;
-	my %nodes     = map { $_ => $self->_get_node($_)->to_hashref } keys %{ $self->{nodes} };
-	my %variables = map { $_ => $self->{variables}{$_}->to_hashref } keys %{ $self->{variables} };
-	my %plugins   = map { $_ => $self->{plugins}{$_}->to_hashref } keys %{ $self->{plugins} };
+	my ($self) = @_;
+	my %nodes       = map { $_ => $self->_get_node($_)->to_hashref } keys %{ $self->{nodes} };
+	my %variables   = map { $_ => $self->{variables}{$_}->to_hashref } keys %{ $self->{variables} };
+	my %commandsets = map { $_ => $self->{commands}{$_}->to_hashref } keys %{ $self->{commands} };
 	return {
-		plugins   => \%plugins,
-		nodes     => \%nodes,
-		variables => \%variables,
+		commandsets => \%commandsets,
+		nodes       => \%nodes,
+		variables   => \%variables,
 	};
 }
 
@@ -211,21 +211,21 @@ sub load {
 		my $value = $hashref->{nodes}{$key};
 		$self->{nodes}{$key} = Build::Graph::Node->new(%{$value}, name => $key, graph => $self);
 	}
-	for my $name (keys %{ $hashref->{plugins} }) {
-		my $args = $hashref->{plugins}{$name};
-		$self->load_plugin($args->{module}, %{$args}, name => $name);
+	for my $name (keys %{ $hashref->{commandsets} }) {
+		my $args = $hashref->{commandsets}{$name};
+		$self->load_commands($args->{module}, %{$args}, name => $name);
 	}
 	return $self;
 }
 
-sub load_plugin {
+sub load_commands {
 	my ($self, $module, %args) = @_;
 	(my $filename = "$module.pm") =~ s{::}{/}g;
 	require $filename;
 	my $plugin = $module->new(%args, graph => $self);
 	my $name = $plugin->name;
-	Carp::croak("Plugin collision: $name already exists") if exists $self->{plugins}{$name};
-	$self->{plugins}{$name} = $plugin;
+	Carp::croak("Plugin collision: $name already exists") if exists $self->{commands}{$name};
+	$self->{commands}{$name} = $plugin;
 	return $plugin;
 }
 

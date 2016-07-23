@@ -18,7 +18,7 @@ use Build::Graph;
 use lib 't/lib';
 
 my $graph = Build::Graph->new;
-$graph->load_plugin('Basic', next_is => 'main::next_is');
+$graph->load_commands('Basic', next_is => 'main::next_is');
 
 my $dirname = tempdir(CLEANUP => 1);
 END { rmtree $dirname if defined $dirname }

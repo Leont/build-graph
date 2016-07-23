@@ -3,7 +3,7 @@ package Basic;
 use strict;
 use warnings;
 
-use base 'Build::Graph::Role::Plugin';
+use base 'Build::Graph::Role::CommandSet';
 
 use Carp qw/croak/;
 

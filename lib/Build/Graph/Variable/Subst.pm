@@ -24,9 +24,9 @@ sub process {
 	my ($self, $source) = @_;
 
 	my ($command, @arguments) = $self->{graph}->expand({ source => $source }, @{ $self->{trans} });
-	my ($plugin_name, $subcommand) = split m{/}, $command, 2;
-	my $plugin = $self->{graph}->lookup_plugin($plugin_name) or Carp::croak("No such plugin $plugin_name");
-	my $target = $plugin->get_transformation($subcommand)->(@arguments);
+	my ($commandset_name, $subcommand) = split m{/}, $command, 2;
+	my $commandset = $self->{graph}->lookup_commandset($commandset_name) or Carp::croak("No such commandset $commandset_name");
+	my $target = $commandset->get_transformation($subcommand)->(@arguments);
 
 	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} || [] } ], action => $self->{action}) if $self->{action};
 	$self->add_entries($target);

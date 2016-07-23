@@ -1,4 +1,4 @@
-package Build::Graph::Role::Plugin;
+package Build::Graph::Role::CommandSet;
 
 use strict;
 use warnings;
@@ -28,6 +28,7 @@ sub to_hashref {
 
 1;
 
+# ABSTRACT: A base role for Sets of action and substitution commands
 
 
 
