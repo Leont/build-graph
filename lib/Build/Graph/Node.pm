@@ -37,6 +37,15 @@ sub dependencies {
 	return $self->{graph}->expand({ target => $self->name }, @{ $self->{dependencies} || [] });
 }
 
+sub lookup_command {
+	my ($self, $options, @action) = @_;
+	my ($command, @arguments) = $self->{graph}->expand($options, @action);
+	my ($plugin_name, $subcommand) = split m{/}, $command, 2;
+	my $plugin = $self->{graph}->lookup_plugin($plugin_name) or Carp::croak("No such plugin $plugin_name");
+	my $callback = $plugin->get_action($subcommand) or Carp::croak("No callback $subcommand in $plugin_name");
+	return ($callback, @arguments);
+}
+
 sub run {
 	my ($self, $arguments) = @_;
 
@@ -60,10 +69,7 @@ sub run {
 	}
 	if ($self->{actions}) {
 		for my $action (@{ $self->{actions} }) {
-			my ($command, @arguments) = $self->{graph}->expand(\%options, @{ $action });
-			my ($plugin_name, $subcommand) = split m{/}, $command, 2;
-			my $plugin = $self->{graph}->lookup_plugin($plugin_name) or Carp::croak("No such plugin $plugin_name");
-			my $callback = $plugin->get_action($subcommand) or Carp::croak("No callback $subcommand in $plugin_name");
+			my ($callback, @arguments) = $self->lookup_command(\%options, @$action);
 			unlink $options{target} if !$self->{phony} && -e $options{target};
 			$callback->(@arguments);
 			rename $options{out}, $options{target} if !$self->{phony} && !-e $options{target};
