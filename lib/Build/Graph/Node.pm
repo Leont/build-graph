@@ -4,6 +4,9 @@ use strict;
 use warnings;
 
 use Carp ();
+use File::Basename ();
+use File::Path ();
+use File::Temp ();
 use Scalar::Util ();
 
 sub new {
@@ -44,11 +47,19 @@ sub run {
 	}
 
 	my %options = (%{$arguments}, target => $self->{name}, dependencies => \@dependencies, source => $dependencies[0]);
+	if (!$self->{phony}) {
+		$options{dirname} = File::Basename::dirname($options{target});
+		File::Path::mkpath($options{dirname}, 0, 0755) if not -d $options{dirname};
+		my $basename = File::Basename::basename($options{target});
+		@options{'handle', 'out'} = File::Temp::tempfile(".$basename.tempXXXX", DIR => $options{dirname}, UNLINK => 1);
+	}
 	if (my ($command, @arguments) = $self->{graph}->expand(\%options, @{ $self->{action} || [] })) {
 		my ($plugin_name, $subcommand) = split m{/}, $command, 2;
 		my $plugin = $self->{graph}->lookup_plugin($plugin_name) or Carp::croak("No such plugin $plugin_name");
 		my $callback = $plugin->get_action($subcommand) or Carp::croak("No callback $subcommand in $plugin_name");
-		eval { $callback->(@arguments); 1 } or do { unlink $self->{name} if !$self->{phony} && -f $self->{name}; die $@ };
+		unlink $options{target} if !$self->{phony} && -e $options{target};
+		$callback->(@arguments);
+		rename $options{out}, $options{target} if !$self->{phony} && !-e $options{target};
 	}
 	else {
 		Carp::croak("No action for $self->{name}") if !$self->{phony};
@@ -74,4 +85,3 @@ sub to_hashref {
 =attr action
 
 =method to_hashref
-

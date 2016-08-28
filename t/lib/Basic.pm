@@ -21,7 +21,11 @@ sub new {
 sub get_action {
 	my ($self, $name) = @_;
 	return {
-		'spew' => sub { my ($target, $source) = @_; $self->{next_is_ref}->($target); spew($target, $source) },
+		'spew' => sub {
+				my ($target, $outhandle, $source) = @_;
+				$self->{next_is_ref}->($target);
+				print $outhandle $source;
+		},
 		'noop' => $self->{next_is_ref},
 	}->{$name};
 }
@@ -35,15 +39,6 @@ sub get_transformation {
 			return $source;
 		}
 	}->{$name};
-}
-
-sub spew {
-	my ($filename, $content) = @_;
-	mkpath(dirname($filename));
-	open my $fh, '>', $filename or croak "Couldn't open file '$filename' for writing: $!\n";
-	print $fh $content;
-	close $fh or croak "couldn't close $filename: $!\n";
-	return;
 }
 
 sub to_hashref {
