@@ -18,7 +18,12 @@ sub new {
 	}, $class;
 	Scalar::Util::weaken($self->{graph});
 	@{ $self->{dependencies} } = @{ $args{dependencies} } if $args{dependencies};
-	@{ $self->{action}       } = @{ $args{action} } if $args{action};
+	if ($args{action_list} && @{ $args{action_list} } > 0) {
+		@{ $self->{actions} } = map { [@$_] } @{ $args{action_list} };
+	}
+	elsif ($args{action}) {
+		@{ $self->{actions} } = [ @{ $args{action} } ];
+	}
 	return $self;
 }
 
@@ -53,13 +58,16 @@ sub run {
 		my $basename = File::Basename::basename($options{target});
 		@options{'handle', 'out'} = File::Temp::tempfile(".$basename.tempXXXX", DIR => $options{dirname}, UNLINK => 1);
 	}
-	if (my ($command, @arguments) = $self->{graph}->expand(\%options, @{ $self->{action} || [] })) {
-		my ($plugin_name, $subcommand) = split m{/}, $command, 2;
-		my $plugin = $self->{graph}->lookup_plugin($plugin_name) or Carp::croak("No such plugin $plugin_name");
-		my $callback = $plugin->get_action($subcommand) or Carp::croak("No callback $subcommand in $plugin_name");
-		unlink $options{target} if !$self->{phony} && -e $options{target};
-		$callback->(@arguments);
-		rename $options{out}, $options{target} if !$self->{phony} && !-e $options{target};
+	if ($self->{actions}) {
+		for my $action (@{ $self->{actions} }) {
+			my ($command, @arguments) = $self->{graph}->expand(\%options, @{ $action });
+			my ($plugin_name, $subcommand) = split m{/}, $command, 2;
+			my $plugin = $self->{graph}->lookup_plugin($plugin_name) or Carp::croak("No such plugin $plugin_name");
+			my $callback = $plugin->get_action($subcommand) or Carp::croak("No callback $subcommand in $plugin_name");
+			unlink $options{target} if !$self->{phony} && -e $options{target};
+			$callback->(@arguments);
+			rename $options{out}, $options{target} if !$self->{phony} && !-e $options{target};
+		}
 	}
 	else {
 		Carp::croak("No action for $self->{name}") if !$self->{phony};
@@ -68,11 +76,18 @@ sub run {
 }
 
 sub to_hashref {
-	my $self           = shift;
+	my $self                = shift;
 	my %ret;
 	$ret{phony}             = 1 if $self->{phony};
 	@{ $ret{dependencies} } = @{ $self->{dependencies} } if $self->{dependencies};
-	@{ $ret{action} }       = @{ $self->{action} } if $self->{action};
+	if ($self->{actions}) {
+		if (@{ $self->{actions} } == 1) {
+			@{ $ret{action} } = @{ $self->{actions}[0] };
+		}
+		else {
+			@{ $ret{action_list} } = map { [@$_] } @{ $self->{actions} };
+		}
+	}
 	return \%ret;
 }
 
