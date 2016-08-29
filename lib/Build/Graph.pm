@@ -5,7 +5,8 @@ use warnings;
 
 use Carp qw//;
 
-use Build::Graph::Node;
+use Build::Graph::Node::File;
+use Build::Graph::Node::Phony;
 
 use Build::Graph::Variable::Wildcard;
 use Build::Graph::Variable::Subst;
@@ -91,7 +92,7 @@ sub expand {
 	return map { _expand_list(\%all, $_, 1) } @values;
 }
 
-sub lookup_plugin {
+sub lookup_commandset {
 	my ($self, $name) = @_;
 	return $self->{commands}{$name};
 }
@@ -103,7 +104,7 @@ sub _get_node {
 
 sub add_file {
 	my ($self, $name, %args) = @_;
-	my $ret = $self->_add_node($name, %args);
+	my $ret = $self->_add_node($name, 'Build::Graph::Node::File', %args);
 
 	$_->match($name) for grep { $_->isa('Build::Graph::Variable::Wildcard') } values %{ $self->{variables} };
 	return $ret;
@@ -111,13 +112,13 @@ sub add_file {
 
 sub add_phony {
 	my ($self, $name, %args) = @_;
-	return $self->_add_node($name, %args, phony => 1);
+	return $self->_add_node($name, 'Build::Graph::Node::Phony', %args);
 }
 
 sub _add_node {
-	my ($self, $name, %args) = @_;
+	my ($self, $name, $class, %args) = @_;
 	Carp::croak("Node '$name' already exists in database") if !$args{override} && exists $self->{nodes}{$name};
-	$self->{nodes}{$name} = "Build::Graph::Node"->new(%args, name => $name, graph => $self);;
+	$self->{nodes}{$name} = $class->new(%args, name => $name, graph => $self);
 	$self->add_variable($args{add_to}, $name) if $args{add_to};
 	return $name;
 }
@@ -209,7 +210,8 @@ sub load {
 	}
 	for my $key (keys %{ $hashref->{nodes} }) {
 		my $value = $hashref->{nodes}{$key};
-		$self->{nodes}{$key} = Build::Graph::Node->new(%{$value}, name => $key, graph => $self);
+		my $class = 'Build::Graph::Node::' . ( $value->{phony} ? 'Phony' : 'File' );
+		$self->{nodes}{$key} = $class->new(%{$value}, name => $key, graph => $self);
 	}
 	for my $name (keys %{ $hashref->{commandsets} }) {
 		my $args = $hashref->{commandsets}{$name};
