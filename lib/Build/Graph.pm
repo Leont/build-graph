@@ -8,7 +8,7 @@ use Carp qw//;
 use Build::Graph::Node::File;
 use Build::Graph::Node::Phony;
 
-use Build::Graph::Variable::Wildcard;
+use Build::Graph::Variable::Pattern;
 use Build::Graph::Variable::Subst;
 use Build::Graph::Variable::Free;
 
@@ -106,7 +106,7 @@ sub add_file {
 	my ($self, $name, %args) = @_;
 	my $ret = $self->_add_node($name, 'Build::Graph::Node::File', %args);
 
-	$_->match($name) for grep { $_->isa('Build::Graph::Variable::Wildcard') } values %{ $self->{variables} };
+	$_->match($name) for grep { $_->isa('Build::Graph::Variable::Pattern') } values %{ $self->{variables} };
 	return $ret;
 }
 
@@ -123,12 +123,13 @@ sub _add_node {
 	return $name;
 }
 
-sub add_wildcard {
+sub add_pattern {
 	my ($self, $name, %args) = @_;
 	$args{pattern} = Build::Graph::Util::glob_to_regex($args{pattern}) if ref($args{pattern}) ne 'Regexp';
-	my $wildcard = Build::Graph::Variable::Wildcard->new(%args);
-	$self->{variables}{$name} = $wildcard;
-	$wildcard->match($_) for grep { $self->{nodes}{$_}->isa('Build::Graph::Node::File') } keys %{ $self->{nodes} };
+	$args{dir} = [] if not defined $args{dir};
+	my $pattern = Build::Graph::Variable::Pattern->new(%args);
+	$self->{variables}{$name} = $pattern;
+	$pattern->match($_) for grep { $self->{nodes}{$_}->isa('Build::Graph::Node::File') } keys %{ $self->{nodes} };
 	return;
 }
 

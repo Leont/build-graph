@@ -30,7 +30,7 @@ $graph->add_file($source1, action => [ 'Basic/spew', '$(target)', '$(handle)', '
 my $source2 = File::Spec->catfile($dirname, 'source2');
 $graph->add_file($source2, action => [ 'Basic/spew', '$(target)', '$(handle)', 'World' ], dependencies => [ $source1 ]);
 
-$graph->add_wildcard('foo-files', pattern => '*.foo', dir => $dirname);
+$graph->add_pattern('foo-files', pattern => '*.foo', dir => $dirname);
 $graph->add_subst('bar-files', 'foo-files', trans => [ 'Basic/s-ext', 'foo', 'bar', '$(source)' ], action => [ 'Basic/spew', '$(target)', '$(handle)', '$(source)' ]);
 
 my $source3_foo = File::Spec->catfile($dirname, 'source3.foo');

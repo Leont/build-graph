@@ -50,4 +50,4 @@ sub to_hashref {
 
 1;
 
-# ABSTRACT: A role shared by sets of entries (e.g. wildcards and substitutions)
+# ABSTRACT: A role shared by sets of entries (e.g. pattern and substitutions)
