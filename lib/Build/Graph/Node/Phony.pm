@@ -16,8 +16,7 @@ sub run {
 
 	if ($self->{actions}) {
 		for my $action (@{ $self->{actions} }) {
-			my ($callback, @arguments) = $self->lookup_command(\%options, @$action);
-			$callback->(@arguments);
+			$self->execute($action, \%options);
 		}
 	}
 	return;

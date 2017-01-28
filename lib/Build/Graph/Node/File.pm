@@ -32,8 +32,7 @@ sub run {
 	if ($self->{actions}) {
 		unlink $filename if -e $filename;
 		for my $action (@{ $self->{actions} }) {
-			my ($callback, @arguments) = $self->lookup_command(\%options, @$action);
-			$callback->(@arguments);
+			$self->execute($action, \%options);
 		}
 		rename $options{out}, $filename if !-e $filename;
 	}
