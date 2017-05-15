@@ -43,10 +43,38 @@ sub new {
 			open my $fh, '>', $target or croak "Could not create $target: $!";
 			close $fh or croak "Could not create $target: $!";
 		},
+		true => sub {
+			return 1;
+		},
+		false => sub {
+			return 0;
+		},
 	);
 
 	for my $key (keys %commands) {
 		$self->{graph}->add_action($key, $commands{$key});
+	}
+
+	my %macros = (
+		if => sub {
+			my ($graph, $opt, $condition, $true, $false) = @_;
+			return 0 if not ref($condition) eq 'ARRAY';
+			my $value = $graph->eval_action($opt, @{ $condition });
+			if ($value) {
+				$graph->eval_action($opt, @{ $true });
+			}
+			elsif ($false) {
+				$graph->eval_action($opt, @{ $false });
+			}
+		},
+	);
+
+	for my $key (keys %macros) {
+		my $macro = Build::Graph::Callable::Macro->new(
+			graph => $self->{graph},
+			callback => $macros{$key},
+		);
+		$self->{graph}->add_action($key, $macro);
 	}
 
 	return $self;

@@ -18,6 +18,7 @@ use Build::Graph;
 use lib 't/lib';
 
 my $graph = Build::Graph->new;
+$graph->load_commands('Build::Graph::CommandSet::Prelude');
 $graph->load_commands('Basic', next_is => 'main::next_is');
 
 my $dirname = tempdir(CLEANUP => 1);
@@ -31,7 +32,7 @@ my $source2 = File::Spec->catfile($dirname, 'source2');
 $graph->add_file($source2, action => [ 'spew', '$(target)', '$(handle)', 'World' ], dependencies => [ $source1 ]);
 
 $graph->add_pattern('foo-files', pattern => '*.foo', dir => $dirname);
-$graph->add_subst('bar-files', 'foo-files', trans => [ 's-ext', 'foo', 'bar', '$(source)' ], action => [ 'spew', '$(target)', '$(handle)', '$(source)' ]);
+$graph->add_subst('bar-files', 'foo-files', trans => [ 's-ext', 'foo', 'bar', '$(source)' ], action => [ 'if', [ 'true' ], [ 'spew', '$(target)', '$(handle)', '$(source)' ] ]);
 
 my $source3_foo = File::Spec->catfile($dirname, 'source3.foo');
 $graph->add_file($source3_foo, action => [ 'spew', '$(target)', '$(handle)', 'foo' ]);
