@@ -12,6 +12,8 @@ use Build::Graph::Variable::Pattern;
 use Build::Graph::Variable::Subst;
 use Build::Graph::Variable::Free;
 
+use Build::Graph::Callable::Function;
+
 use Build::Graph::Util;
 
 use Scalar::Util ();
@@ -148,15 +150,15 @@ sub add_action {
 	my ($self, $name, $callback, $opts) = @_;
 	die "Action $name is already defined" if exists $self->{trans}{$name};
 
-	$self->{actions}{$name} = $callback;
+	my $callable = Scalar::Util::blessed($callback) ? $callback : Build::Graph::Callable::Function->new(graph => $self, callback => $callback);
+	$self->{actions}{$name} = $callable;
 	return;
 }
 
 sub eval_action {
 	my ($self, $opt, $name, @arguments) = @_;
-	if (my $command = $self->{actions}{$name}) {
-		my @expanded = $self->expand($opt, @arguments);
-		return $command->(@expanded);
+	if (my $callable = $self->{actions}{$name}) {
+		return $callable->call($opt, @arguments);
 	}
 	else {
 		die "No such action $name";
