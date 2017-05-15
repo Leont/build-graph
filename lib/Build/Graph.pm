@@ -19,9 +19,9 @@ use Scalar::Util ();
 sub new {
 	my $class = shift;
 	return bless {
-		nodes     => {},
-		commands  => {},
-		variables => {},
+		nodes       => {},
+		commandsets => {},
+		variables   => {},
 	}, $class;
 }
 
@@ -92,11 +92,6 @@ sub expand {
 	return map { _expand_list(\%all, $_, 1) } @values;
 }
 
-sub lookup_commandset {
-	my ($self, $name) = @_;
-	return $self->{commands}{$name};
-}
-
 sub _get_node {
 	my ($self, $key) = @_;
 	return $self->{nodes}{$key};
@@ -149,6 +144,45 @@ sub add_subst {
 	return;
 }
 
+sub add_action {
+	my ($self, $name, $callback, $opts) = @_;
+	die "Action $name is already defined" if exists $self->{trans}{$name};
+
+	$self->{actions}{$name} = $callback;
+	return;
+}
+
+sub eval_action {
+	my ($self, $opt, $name, @arguments) = @_;
+	if (my $command = $self->{actions}{$name}) {
+		my @expanded = $self->expand($opt, @arguments);
+		return $command->(@expanded);
+	}
+	else {
+		die "No such action $name";
+	}
+}
+
+sub add_transformation {
+	my ($self, $name, $callback, $opts) = @_;
+	die "Transformation $name is already defined" if exists $self->{trans}{$name};
+
+	$self->{trans}{$name} = $callback;
+	return;
+}
+
+sub eval_transformation {
+	my ($self, $opt, $name, @arguments) = @_;
+	if (my $callback = $self->{trans}{$name}) {
+		my @expanded = $self->expand($opt, @arguments);
+		return $callback->(@expanded);
+	}
+	else {
+		my @avail = join ", ", keys %{ $self->{trans} };
+		die "No such transformation $name: @avail";
+	}
+}
+
 my $node_sorter;
 $node_sorter = sub {
 	my ($self, $current, $callback, $seen, $loop) = @_;
@@ -182,7 +216,7 @@ sub to_hashref {
 	my ($self) = @_;
 	my %nodes       = map { $_ => $self->_get_node($_)->to_hashref } keys %{ $self->{nodes} };
 	my %variables   = map { $_ => $self->{variables}{$_}->to_hashref } keys %{ $self->{variables} };
-	my %commandsets = map { $_ => $self->{commands}{$_}->to_hashref } keys %{ $self->{commands} };
+	my %commandsets = map { $_ => $self->{commandsets}{$_}->to_hashref } keys %{ $self->{commandsets} };
 	return {
 		commandsets => \%commandsets,
 		nodes       => \%nodes,
@@ -228,7 +262,7 @@ sub load_commands {
 	my $plugin = $module->new(%args, graph => $self);
 	my $name = $plugin->name;
 	Carp::croak("Plugin collision: $name already exists") if exists $self->{commands}{$name};
-	$self->{commands}{$name} = $plugin;
+	$self->{commandsets}{$name} = $plugin;
 	return $plugin;
 }
 

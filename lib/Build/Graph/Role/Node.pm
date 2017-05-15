@@ -38,11 +38,7 @@ sub dependencies {
 
 sub execute {
 	my ($self, $action, $options) = @_;
-	my ($command, @arguments) = $self->{graph}->expand($options, @$action);
-	my ($commandset_name, $subcommand) = split m{/}, $command, 2;
-	my $commandset = $self->{graph}->lookup_commandset($commandset_name) or Carp::croak("No such commandset $commandset_name");
-	my $callback = $commandset->get_action($subcommand) or Carp::croak("No callback $subcommand in $commandset_name");
-	$callback->(@arguments);
+	return $self->{graph}->eval_action($options, @{$action});
 }
 
 sub to_hashref {

@@ -41,10 +41,7 @@ sub _serialize_actions {
 sub process {
 	my ($self, $source) = @_;
 
-	my ($command, @arguments) = $self->{graph}->expand({ source => $source }, @{ $self->{trans} });
-	my ($commandset_name, $subcommand) = split m{/}, $command, 2;
-	my $commandset = $self->{graph}->lookup_commandset($commandset_name) or Carp::croak("No such commandset $commandset_name");
-	my $target = $commandset->get_transformation($subcommand)->(@arguments);
+	my $target = $self->{graph}->eval_transformation({ source => $source }, @{ $self->{trans} });
 
 	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} || [] } ], $self->_serialize_actions);
 	$self->add_entries($target);
