@@ -9,10 +9,31 @@ use Build::Graph::Callable::Macro;
 
 use Carp qw/croak/;
 
+my $quote = $^O eq 'MSWin32' ? do { require Win32::ShellQuote; \&Win32::ShellQuote::quote_system_list } : sub { @_ };
+
 sub new {
 	my ($class, %args) = @_;
 	my $self = $class->SUPER::new(%args);
 	my %commands = (
+		exec => sub {
+			my @args = @_;
+			my @quoted = $quote->(@args);
+			system @quoted and die "@args returned $?";
+			return;
+		},
+		load => sub {
+			my @modules = @_;
+			for my $module (@modules) {
+				(my $file = "$module.pm") =~ s{::}{/}g;
+				require $file;
+			}
+			return;
+		},
+		call => sub {
+			my ($function, @arguments) = @_;
+			my $sub = do { no strict 'refs'; \&{ $function } } || die "No such function $function";
+			return $sub->(@arguments);
+		},
 		'copy' => sub {
 			my ($args, $source, $target) = @_;
 
