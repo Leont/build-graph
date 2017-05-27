@@ -64,6 +64,11 @@ sub new {
 			open my $fh, '>', $target or croak "Could not create $target: $!";
 			close $fh or croak "Could not create $target: $!";
 		},
+		echo => sub {
+			my @args = @_;
+			print join(" ", @args), "\n";
+			return;
+		},
 		true => sub {
 			return 1;
 		},
