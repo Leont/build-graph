@@ -88,6 +88,22 @@ sub new {
 				$graph->eval_action($opt, @{ $false });
 			}
 		},
+		setval => sub {
+			my ($graph, $opt, $variable, $value) = @_;
+			$opt->{$variable} = $graph->expand($opt, $value);
+			return $opt->{$variable};
+		},
+		setvals => sub {
+			my ($graph, $opt, $variable, @values) = @_;
+			$opt->{$variable} = [ $graph->expand($opt, @values) ];
+			return $opt->{$variable};
+		},
+		seteval => sub {
+			my ($graph, $opt, $variable, @command) = @_;
+			my $value = $graph->eval_action($opt, @command);
+			$opt->{$variable} = $graph->expand($opt, $value);
+			return $opt->{$variable};
+		},
 	);
 
 	for my $key (keys %macros) {

@@ -91,7 +91,13 @@ sub _expand_scalar {
 sub expand {
 	my ($self, $options, @values) = @_;
 	my %all = ( %{ $self->{variables} }, %{$options} );
-	return map { _expand_list(\%all, $_, 1) } @values;
+	if (wantarray) {
+		return map { _expand_list(\%all, $_, 1) } @values;
+	}
+	else {
+		die "Can't expand multiple value in scalar context" if @values != 1;
+		return _expand_scalar(\%all, $values[0], 1);
+	}
 }
 
 sub _get_node {
