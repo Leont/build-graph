@@ -84,14 +84,29 @@ sub new {
 	my %macros = (
 		if => sub {
 			my ($graph, $opt, $condition, $true, $false) = @_;
-			return 0 if not ref($condition) eq 'ARRAY';
-			my $value = $graph->eval_action($opt, @{ $condition });
-			if ($value) {
-				$graph->eval_action($opt, @{ $true });
+			return if not ref($condition) eq 'ARRAY';
+			if ($graph->eval_action($opt, @{ $condition })) {
+				return $graph->eval_action($opt, @{ $true });
 			}
 			elsif ($false) {
-				$graph->eval_action($opt, @{ $false });
+				return $graph->eval_action($opt, @{ $false });
 			}
+		},
+		while => sub {
+			my ($graph, $opt, $condition, $true) = @_;
+			return if not ref($condition) eq 'ARRAY';
+			while ($graph->eval_action($opt, @{ $condition })) {
+				$graph->eval_action($opt, @{ $true });
+			}
+			return;
+		},
+		for => sub {
+			my ($graph, $opt, $raw_values, $action) = @_;
+			for my $value ($graph->expand($opt, @{$raw_values})) {
+				local $opt->{topic} = $value;
+				$graph->eval_action($opt, @{ $action });
+			}
+			return;
 		},
 		setval => sub {
 			my ($graph, $opt, $variable, $value) = @_;
