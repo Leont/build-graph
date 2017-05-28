@@ -104,6 +104,12 @@ sub expand {
 	}
 }
 
+sub escape {
+	my ($self, $string) = @_;
+	$string =~ s/ ( ^ \$ (?= [\w.\$@%-] ) | ^ @ (?= [\w.-] ) | ^ % (?= [\w.{-] ) |  \$ (?= [\w.\$-] ) ) /\$$1/gsx;
+	return $string;
+}
+
 sub _get_node {
 	my ($self, $key) = @_;
 	return $self->{nodes}{$key};

@@ -129,5 +129,23 @@ local @{$graph}{qw/actions trans/};
 local @{$clone}{qw/actions trans/};
 is_deeply($clone, $graph, 'Clone deeply equals original');
 
+my %expands = (
+	'$foo' => '$$foo',
+	'@foo' => '$@foo',
+	'%foo' => '$%foo',
+	'%{foo}' => '$%{foo}',
+	'$foo' => '$$foo',
+	'bar$foo' => 'bar$$foo',
+	'bar@foo' => 'bar@foo',
+#	'$$' => '$$$',
+);
+
+for my $input (sort keys %expands) {
+	my $expanded = $graph->escape($input);
+	is($expanded, $expands{$input}, "Expanded $input equals $expanded");
+	my $evaluated = $graph->expand({}, $expanded);
+	is($evaluated, $input, "Evaluated $expanded equals $input");
+}
+
 done_testing();
 
