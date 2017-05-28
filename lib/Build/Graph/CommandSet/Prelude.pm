@@ -124,6 +124,12 @@ sub new {
 			$opt->{$variable} = $graph->expand($opt, $value);
 			return $opt->{$variable};
 		},
+		block => sub {
+			my ($graph, $opt, @commands) = @_;
+			for my $command (@commands) {
+				$graph->eval_action($opt, @{$command});
+			}
+		},
 	);
 
 	for my $key (keys %macros) {
