@@ -38,7 +38,7 @@ sub _serialize_actions {
 	return;
 }
 
-sub process {
+sub add_input {
 	my ($self, $source) = @_;
 
 	my $target = $self->{graph}->eval_transformation({ source => $source }, @{ $self->{trans} });

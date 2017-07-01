@@ -119,7 +119,7 @@ sub add_file {
 	my ($self, $name, %args) = @_;
 	my $ret = $self->_add_node($name, 'Build::Graph::Node::File', %args);
 
-	$_->match($name) for grep { $_->isa('Build::Graph::Variable::Pattern') } values %{ $self->{variables} };
+	$_->add_input($name) for grep { $_->isa('Build::Graph::Variable::Pattern') } values %{ $self->{variables} };
 	return $ret;
 }
 
@@ -142,7 +142,7 @@ sub add_pattern {
 	$args{dir} = [] if not defined $args{dir};
 	my $pattern = Build::Graph::Variable::Pattern->new(%args);
 	$self->{variables}{$name} = $pattern;
-	$pattern->match($_) for grep { $self->{nodes}{$_}->isa('Build::Graph::Node::File') } keys %{ $self->{nodes} };
+	$pattern->add_input($_) for grep { $self->{nodes}{$_}->isa('Build::Graph::Node::File') } keys %{ $self->{nodes} };
 	return;
 }
 
@@ -157,7 +157,7 @@ sub add_subst {
 	my ($self, $name, $sourcename, %args) = @_;
 	my $source = $self->{variables}{$sourcename};
 	my $sub = Build::Graph::Variable::Subst->new(%args, graph => $self, name => $name);
-	$source->add_subst($sub);
+	$source->add_dependent($sub);
 	$self->{variables}{$name} = $sub;
 	return;
 }
@@ -245,11 +245,11 @@ sub to_hashref {
 sub _load_variables {
 	my ($self, $source, $name) = @_;
 	my $entry = $source->{$name};
-	my @subst_names = @{ $entry->{substs} || [] };
-	_load_variables($self, $source, $_) for grep { not $self->{variables}{$_} } @subst_names;
-	my @substs  = map { $self->{variables}{$_} } @subst_names;
+	my @dependent_names = @{ $entry->{dependents} || [] };
+	_load_variables($self, $source, $_) for grep { not $self->{variables}{$_} } @dependent_names;
+	my @dependents  = map { $self->{variables}{$_} } @dependent_names;
 	my $class   = "Build::Graph::Variable::\u$entry->{type}";
-	my $entries = $class->new(%{$entry}, substs => \@substs, graph => $self, name => $name);
+	my $entries = $class->new(%{$entry}, dependents => \@dependents, graph => $self, name => $name);
 	$self->{variables}{$name} = $entries;
 	return;
 }
@@ -279,7 +279,7 @@ sub load_commands {
 	require $filename;
 	my $plugin = $module->new(%args, graph => $self);
 	my $name = $plugin->name;
-	Carp::croak("Plugin collision: $name already exists") if exists $self->{commands}{$name};
+	Carp::croak("Plugin collision: $name already exists") if exists $self->{commandsets}{$name};
 	$self->{commandsets}{$name} = $plugin;
 	return $plugin;
 }

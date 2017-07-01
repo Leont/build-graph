@@ -38,7 +38,7 @@ sub _match_filename {
 	return File::Basename::basename($filename) =~ $pattern;
 }
 
-sub match {
+sub add_input {
 	my ($self, $filename) = @_;
 	if ($self->_dir_matches($filename) && _match_filename($filename, $self->{pattern})) {
 		push @{ $self->{entries} }, $filename;

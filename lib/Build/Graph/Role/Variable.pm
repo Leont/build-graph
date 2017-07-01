@@ -8,8 +8,8 @@ use Carp ();
 sub new {
 	my ($class, %args) = @_;
 	my $self = bless {
-		entries => $args{entries} || [],
-		substs  => $args{substs}  || [],
+		entries    => $args{entries}    || [],
+		dependents => $args{dependents} || [],
 	}, $class;
 	return $self;
 }
@@ -19,19 +19,19 @@ sub entries {
 	return @{ $self->{entries} };
 }
 
-sub add_subst {
-	my ($self, $sub) = @_;
-	push @{ $self->{substs} }, $sub;
+sub add_dependent {
+	my ($self, $dep) = @_;
+	push @{ $self->{dependents} }, $dep;
 	for my $file (@{ $self->{entries} }) {
-		$sub->process($file);
+		$dep->add_input($file);
 	}
 	return;
 }
 
 sub pass_on {
 	my ($self, $entry) = @_;
-	for my $subst (@{ $self->{substs} }) {
-		$subst->process($entry);
+	for my $dependent (@{ $self->{dependents} }) {
+		$dependent->add_input($entry);
 	}
 	return;
 }
@@ -39,9 +39,9 @@ sub pass_on {
 sub to_hashref {
 	my $self = shift;
 	my %ret;
-	$ret{type}    = lc +(ref($self) =~ /^Build::Graph::Variable::(\w+)$/)[0];
-	@{ $ret{entries} } = @{ $self->{entries} } if @{ $self->{entries} };
-	@{ $ret{substs}  } = map { $_->{name} } @{ $self->{substs} } if @{ $self->{substs} };
+	$ret{type}            = lc +(ref($self) =~ /^Build::Graph::Variable::(\w+)$/)[0];
+	@{ $ret{entries}    } = @{ $self->{entries} } if @{ $self->{entries} };
+	@{ $ret{dependents} } = map { $_->{name} } @{ $self->{dependents} } if @{ $self->{dependents} };
 	return \%ret;
 }
 
