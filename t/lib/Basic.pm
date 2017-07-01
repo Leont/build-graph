@@ -14,13 +14,13 @@ use Scalar::Util 'weaken';
 sub new {
 	my ($class, %args) = @_;
 	my $self = $class->SUPER::new(%args);
-	$self->{graph}->add_action('spew' => sub {
+	$self->{graph}->actions->add('spew' => sub {
 		my ($target, $outhandle, $source) = @_;
 		main::next_is($target);
 		print $outhandle $source;
 	});
-	$self->{graph}->add_action('noop' => \&main::next_is);
-	$self->{graph}->add_transformation('s-ext' => sub {
+	$self->{graph}->actions->add('noop' => \&main::next_is);
+	$self->{graph}->transformations->add('s-ext' => sub {
 		my ($orig, $repl, $source) = @_;
 		$source =~ s/(?<=\.)\Q$orig\E\z/$repl/;
 		return $source;

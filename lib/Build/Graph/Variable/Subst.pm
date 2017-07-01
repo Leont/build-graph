@@ -50,10 +50,10 @@ sub add_input {
 
 	my $target = $source;
 	for my $trans (@{ $self->{trans} }) {
-		$target = $self->{graph}->eval_transformation({ source => $graph->escape($target) }, @{ $trans });
+		$target = $self->{graph}->transformations->eval({ source => $self->{graph}->escape($target) }, @{ $trans });
 	}
 
-	$self->{graph}->add_file($target, dependencies => [ $graph->escape($source), @{ $self->{dependencies} || [] } ], $self->_serialize_actions);
+	$self->{graph}->add_file($target, dependencies => [ $self->{graph}->escape($source), @{ $self->{dependencies} || [] } ], $self->_serialize_actions);
 	push @{ $self->{entries} }, $target;
 	$self->pass_on($target);
 	return;

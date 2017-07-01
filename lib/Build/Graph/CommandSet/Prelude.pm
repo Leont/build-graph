@@ -78,25 +78,25 @@ sub new {
 	);
 
 	for my $key (keys %commands) {
-		$self->{graph}->add_action($key, $commands{$key});
+		$self->{graph}->actions->add($key, $commands{$key});
 	}
 
 	my %macros = (
 		if => sub {
 			my ($graph, $opt, $condition, $true, $false) = @_;
 			return if not ref($condition) eq 'ARRAY';
-			if ($graph->eval_action($opt, @{ $condition })) {
-				return $graph->eval_action($opt, @{ $true });
+			if ($graph->actions->eval($opt, @{ $condition })) {
+				return $graph->actions->eval($opt, @{ $true });
 			}
 			elsif ($false) {
-				return $graph->eval_action($opt, @{ $false });
+				return $graph->actions->eval($opt, @{ $false });
 			}
 		},
 		while => sub {
 			my ($graph, $opt, $condition, $true) = @_;
 			return if not ref($condition) eq 'ARRAY';
-			while ($graph->eval_action($opt, @{ $condition })) {
-				$graph->eval_action($opt, @{ $true });
+			while ($graph->actions->eval($opt, @{ $condition })) {
+				$graph->actions->eval($opt, @{ $true });
 			}
 			return;
 		},
@@ -104,7 +104,7 @@ sub new {
 			my ($graph, $opt, $raw_values, $action) = @_;
 			for my $value ($graph->expand($opt, @{$raw_values})) {
 				local $opt->{topic} = $value;
-				$graph->eval_action($opt, @{ $action });
+				$graph->actions->eval($opt, @{ $action });
 			}
 			return;
 		},
@@ -120,14 +120,14 @@ sub new {
 		},
 		seteval => sub {
 			my ($graph, $opt, $variable, @command) = @_;
-			my $value = $graph->eval_action($opt, @command);
+			my $value = $graph->actions->eval($opt, @command);
 			$opt->{$variable} = $graph->expand($opt, $value);
 			return $opt->{$variable};
 		},
 		block => sub {
 			my ($graph, $opt, @commands) = @_;
 			for my $command (@commands) {
-				$graph->eval_action($opt, @{$command});
+				$graph->actions->eval($opt, @{$command});
 			}
 		},
 	);
@@ -137,7 +137,7 @@ sub new {
 			graph => $self->{graph},
 			callback => $macros{$key},
 		);
-		$self->{graph}->add_action($key, $macro);
+		$self->{graph}->actions->add($key, $macro);
 	}
 
 	return $self;

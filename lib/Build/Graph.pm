@@ -12,7 +12,7 @@ use Build::Graph::Variable::Pattern;
 use Build::Graph::Variable::Subst;
 use Build::Graph::Variable::Free;
 
-use Build::Graph::Callable::Function;
+use Build::Graph::Namespace;
 
 use Build::Graph::Util;
 
@@ -20,11 +20,14 @@ use Scalar::Util ();
 
 sub new {
 	my $class = shift;
-	return bless {
+	my $self = bless {
 		nodes       => {},
 		commandsets => {},
 		variables   => {},
 	}, $class;
+	$self->{actions}         = Build::Graph::Namespace->new(graph => $self, type => 'action');
+	$self->{transformations} = Build::Graph::Namespace->new(graph => $self, type => 'transformation');
+	return $self;
 }
 
 sub _get_value {
@@ -161,43 +164,14 @@ sub add_subst {
 	return;
 }
 
-sub add_action {
-	my ($self, $name, $callback, $opts) = @_;
-	die "Action $name is already defined" if exists $self->{trans}{$name};
-
-	my $callable = Scalar::Util::blessed($callback) ? $callback : Build::Graph::Callable::Function->new(graph => $self, callback => $callback);
-	$self->{actions}{$name} = $callable;
-	return;
+sub actions {
+	my $self = shift;
+	return $self->{actions};
 }
 
-sub eval_action {
-	my ($self, $opt, $name, @arguments) = @_;
-	if (my $callable = $self->{actions}{$name}) {
-		return $callable->call($opt, @arguments);
-	}
-	else {
-		die "No such action $name";
-	}
-}
-
-sub add_transformation {
-	my ($self, $name, $callback, $opts) = @_;
-	die "Transformation $name is already defined" if exists $self->{trans}{$name};
-
-	$self->{trans}{$name} = $callback;
-	return;
-}
-
-sub eval_transformation {
-	my ($self, $opt, $name, @arguments) = @_;
-	if (my $callback = $self->{trans}{$name}) {
-		my @expanded = $self->expand($opt, @arguments);
-		return $callback->(@expanded);
-	}
-	else {
-		my @avail = join ", ", keys %{ $self->{trans} };
-		die "No such transformation $name: @avail";
-	}
+sub transformations {
+	my $self = shift;
+	return $self->{transformations};
 }
 
 my $node_sorter;

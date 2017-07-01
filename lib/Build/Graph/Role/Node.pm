@@ -38,7 +38,7 @@ sub dependencies {
 
 sub execute {
 	my ($self, $action, $options) = @_;
-	return $self->{graph}->eval_action($options, @{$action});
+	return $self->{graph}->actions->eval($options, @{$action});
 }
 
 sub to_hashref {
