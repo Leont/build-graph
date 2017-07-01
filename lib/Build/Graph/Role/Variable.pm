@@ -8,6 +8,7 @@ use Carp ();
 sub new {
 	my ($class, %args) = @_;
 	my $self = bless {
+		name       => $args{name}       || Carp::croak('No name given'),
 		entries    => $args{entries}    || [],
 		dependents => $args{dependents} || [],
 	}, $class;

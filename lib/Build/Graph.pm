@@ -119,7 +119,7 @@ sub add_file {
 	my ($self, $name, %args) = @_;
 	my $ret = $self->_add_node($name, 'Build::Graph::Node::File', %args);
 
-	$_->add_input($name) for grep { $_->isa('Build::Graph::Variable::Pattern') } values %{ $self->{variables} };
+	$self->add_variable('all-files', $name);
 	return $ret;
 }
 
@@ -140,24 +140,24 @@ sub add_pattern {
 	my ($self, $name, %args) = @_;
 	$args{pattern} = Build::Graph::Util::glob_to_regex($args{pattern}) if ref($args{pattern}) ne 'Regexp';
 	$args{dir} = [] if not defined $args{dir};
-	my $pattern = Build::Graph::Variable::Pattern->new(%args);
+	my $pattern = Build::Graph::Variable::Pattern->new(%args, name => $name);
 	$self->{variables}{$name} = $pattern;
-	$pattern->add_input($_) for grep { $self->{nodes}{$_}->isa('Build::Graph::Node::File') } keys %{ $self->{nodes} };
+	my $source_name = 'all-files' if not defined $args{source};
+	$self->{variables}{$source_name}->add_dependent($pattern);
 	return;
 }
 
 sub add_variable {
 	my ($self, $name, @values) = @_;
-	$self->{variables}{$name} ||= Build::Graph::Variable::Free->new();
+	$self->{variables}{$name} ||= Build::Graph::Variable::Free->new(name => $name);
 	$self->{variables}{$name}->add_entries(@values);
 	return;
 }
 
 sub add_subst {
-	my ($self, $name, $sourcename, %args) = @_;
-	my $source = $self->{variables}{$sourcename};
+	my ($self, $name, $source_name, %args) = @_;
 	my $sub = Build::Graph::Variable::Subst->new(%args, graph => $self, name => $name);
-	$source->add_dependent($sub);
+	$self->{variables}{$source_name}->add_dependent($sub);
 	$self->{variables}{$name} = $sub;
 	return;
 }

@@ -11,7 +11,6 @@ use Scalar::Util ();
 sub new {
 	my ($class, %args) = @_;
 	my $self = $class->SUPER::new(%args);
-	$self->{name}              = $args{name}            || Carp::croak('No name given');
 	@{ $self->{trans}        } = @{ $args{trans}        || Carp::croak('No trans given')  };
 	if ($args{action_list}) {
 		@{ $self->{actions} } = map { [@$_] } @{ $args{action_list} };
