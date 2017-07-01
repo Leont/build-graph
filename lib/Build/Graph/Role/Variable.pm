@@ -28,13 +28,10 @@ sub add_subst {
 	return;
 }
 
-sub add_entries {
-	my ($self, @entries) = @_;
-	push @{ $self->{entries} }, @entries;
-	for my $entry (@entries) {
-		for my $subst (@{ $self->{substs} }) {
-			$subst->process($entry);
-		}
+sub pass_on {
+	my ($self, $entry) = @_;
+	for my $subst (@{ $self->{substs} }) {
+		$subst->process($entry);
 	}
 	return;
 }

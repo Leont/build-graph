@@ -41,7 +41,8 @@ sub _match_filename {
 sub match {
 	my ($self, $filename) = @_;
 	if ($self->_dir_matches($filename) && _match_filename($filename, $self->{pattern})) {
-		$self->add_entries($filename);
+		push @{ $self->{entries} }, $filename;
+		$self->pass_on($filename);
 	}
 	return;
 }

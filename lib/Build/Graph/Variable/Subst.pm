@@ -44,7 +44,8 @@ sub process {
 	my $target = $self->{graph}->eval_transformation({ source => $source }, @{ $self->{trans} });
 
 	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} || [] } ], $self->_serialize_actions);
-	$self->add_entries($target);
+	push @{ $self->{entries} }, $target;
+	$self->pass_on($target);
 	return;
 }
 
