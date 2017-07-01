@@ -14,7 +14,7 @@ sub new {
 	my $self = $class->SUPER::new(%args);
 	$self->{pattern}  = $args{pattern} || Carp::croak('No pattern is given');
 	$self->{pattern}  = qr/$self->{pattern}/ if not ref $self->{pattern} eq 'Regexp';
-	@{ $self->{dir} } = ref($args{dir}) ? @{ $args{dir} } : $args{dir} eq File::Spec->curdir ? () : File::Spec->splitdir(File::Spec->canonpath($args{dir}));
+	@{ $self->{dir} } = ref($args{dir}) ? @{ $args{dir} } : !defined($args{dir}) || $args{dir} eq File::Spec->curdir ? () : File::Spec->splitdir(File::Spec->canonpath($args{dir}));
 	return $self;
 }
 
@@ -53,7 +53,7 @@ sub to_hashref {
 	my $self = shift;
 	my $ret  = $self->SUPER::to_hashref;
 	($ret->{pattern}) = $self->{pattern} =~ / \A $before (.*) $after \z /xms;
-	$ret->{dir} = $self->{dir};
+	$ret->{dir} = $self->{dir} if @{ $self->{dir} };
 	return $ret;
 }
 

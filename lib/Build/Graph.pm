@@ -139,7 +139,6 @@ sub _add_node {
 sub add_pattern {
 	my ($self, $name, %args) = @_;
 	$args{pattern} = Build::Graph::Util::glob_to_regex($args{pattern}) if ref($args{pattern}) ne 'Regexp';
-	$args{dir} = [] if not defined $args{dir};
 	my $pattern = Build::Graph::Variable::Pattern->new(%args, name => $name);
 	$self->{variables}{$name} = $pattern;
 	my $source_name = 'all-files' if not defined $args{source};
