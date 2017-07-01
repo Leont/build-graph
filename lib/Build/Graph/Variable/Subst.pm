@@ -11,7 +11,15 @@ use Scalar::Util ();
 sub new {
 	my ($class, %args) = @_;
 	my $self = $class->SUPER::new(%args);
-	@{ $self->{trans}        } = @{ $args{trans}        || Carp::croak('No trans given')  };
+	if ($args{trans_list}) {
+		@{ $self->{trans} } = map { [@$_] } @{ $args{trans_list} };
+	}
+	elsif ($args{trans}) {
+		@{ $self->{trans} } = [ @{ $args{trans} } ];
+	}
+	else {
+		Carp::croak('No trans given');
+	}
 	if ($args{action_list}) {
 		@{ $self->{actions} } = map { [@$_] } @{ $args{action_list} };
 	}
@@ -40,9 +48,12 @@ sub _serialize_actions {
 sub add_input {
 	my ($self, $source) = @_;
 
-	my $target = $self->{graph}->eval_transformation({ source => $source }, @{ $self->{trans} });
+	my $target = $source;
+	for my $trans (@{ $self->{trans} }) {
+		$target = $self->{graph}->eval_transformation({ source => $graph->escape($target) }, @{ $trans });
+	}
 
-	$self->{graph}->add_file($target, dependencies => [ $source, @{ $self->{dependencies} || [] } ], $self->_serialize_actions);
+	$self->{graph}->add_file($target, dependencies => [ $graph->escape($source), @{ $self->{dependencies} || [] } ], $self->_serialize_actions);
 	push @{ $self->{entries} }, $target;
 	$self->pass_on($target);
 	return;
@@ -51,12 +62,18 @@ sub add_input {
 sub to_hashref {
 	my $self = shift;
 	my $ret  = $self->SUPER::to_hashref;
-	@{ $ret->{trans} } = @{ $self->{trans} };
+	if ($self->{trans}) {
+		if (@{ $self->{trans} } == 1) {
+			@{ $ret->{trans} } = @{ $self->{trans}[0] };
+		}
+		else {
+			@{ $ret->{trans_list} } = map { [@$_] } @{ $self->{trans} };
+		}
+	}
 	if ($self->{actions}) {
 		my ($key, $value) = $self->_serialize_actions;
 		$ret->{$key} = $value;
 	}
-	@{ $ret->{action} } = @{ $self->{action} } if $self->{action};
 	@{ $ret->{dependencies} } = @{ $self->{dependencies} } if $self->{dependencies};
 	return $ret;
 }
