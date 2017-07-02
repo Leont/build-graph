@@ -207,9 +207,8 @@ sub to_hashref {
 	my ($self) = @_;
 	my %nodes       = map { $_ => $self->_get_node($_)->to_hashref } keys %{ $self->{nodes} };
 	my %variables   = map { $_ => $self->{variables}{$_}->to_hashref } keys %{ $self->{variables} };
-	my %commandsets = map { $_ => $self->{commandsets}{$_}->to_hashref } keys %{ $self->{commandsets} };
 	return {
-		commandsets => \%commandsets,
+		commandsets => $self->{commandsets},
 		nodes       => \%nodes,
 		variables   => \%variables,
 	};
@@ -239,9 +238,9 @@ sub load {
 		my $class = 'Build::Graph::Node::' . ( $value->{phony} ? 'Phony' : 'File' );
 		$self->{nodes}{$key} = $class->new(%{$value}, name => $key, graph => $self);
 	}
-	for my $name (keys %{ $hashref->{commandsets} }) {
-		my $args = $hashref->{commandsets}{$name};
-		$self->load_commands($args->{module}, %{$args}, name => $name);
+	for my $module (keys %{ $hashref->{commandsets} }) {
+		my $args = $hashref->{commandsets}{$module};
+		$self->load_commands($module, %{$args});
 	}
 	return $self;
 }
@@ -250,11 +249,9 @@ sub load_commands {
 	my ($self, $module, %args) = @_;
 	(my $filename = "$module.pm") =~ s{::}{/}g;
 	require $filename;
-	my $plugin = $module->new(%args, graph => $self);
-	my $name = $plugin->name;
-	Carp::croak("Plugin collision: $name already exists") if exists $self->{commandsets}{$name};
-	$self->{commandsets}{$name} = $plugin;
-	return $plugin;
+	$module->add_to($self, %args);
+	$self->{commandsets}{$module} = \%args;
+	return;
 }
 
 1;

@@ -3,17 +3,14 @@ package Build::Graph::CommandSet::Prelude;
 use strict;
 use warnings;
 
-use base 'Build::Graph::Role::CommandSet';
-
 use Build::Graph::Callable::Macro;
 
 use Carp qw/croak/;
 
 my $quote = $^O eq 'MSWin32' ? do { require Win32::ShellQuote; \&Win32::ShellQuote::quote_system_list } : sub { @_ };
 
-sub new {
-	my ($class, %args) = @_;
-	my $self = $class->SUPER::new(%args);
+sub add_to {
+	my ($class, $graph, %args) = @_;
 	my %commands = (
 		exec => sub {
 			my @args = @_;
@@ -78,7 +75,7 @@ sub new {
 	);
 
 	for my $key (keys %commands) {
-		$self->{graph}->actions->add($key, $commands{$key});
+		$graph->actions->add($key, $commands{$key});
 	}
 
 	my %macros = (
@@ -134,13 +131,13 @@ sub new {
 
 	for my $key (keys %macros) {
 		my $macro = Build::Graph::Callable::Macro->new(
-			graph => $self->{graph},
+			graph => $graph,
 			callback => $macros{$key},
 		);
-		$self->{graph}->actions->add($key, $macro);
+		$graph->actions->add($key, $macro);
 	}
 
-	return $self;
+	return;
 }
 
 1;
